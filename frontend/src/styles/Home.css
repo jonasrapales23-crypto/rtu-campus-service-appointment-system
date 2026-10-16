@@ -1,0 +1,152 @@
+
+.home-main {
+  flex: 1;
+  padding: 14px 16px 26px;
+  color: #102b57;
+}
+
+.home-intro h1,
+.offices-section > h2 {
+  margin: 0 0 8px;
+  color: #102b57;
+  font-size: 22px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.home-hero {
+  padding: 20px 18px;
+  border: 1px solid #d0d9eb;
+  border-radius: 9px;
+  background: linear-gradient(110deg, #5bc4e8, #dce31a);
+  color: #102b57;
+}
+
+.home-hero h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.home-hero p {
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.offices-section {
+  margin-top: 14px;
+}
+
+.offices-section > h2 {
+  margin-bottom: 8px;
+}
+
+.office-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.office-card {
+  min-width: 0;
+  min-height: 142px;
+  padding: 14px 12px;
+  border: 1px solid #d0d9eb;
+  border-radius: 8px;
+  background: #e8ecf5;
+  color: #102b57;
+}
+
+.office-card h3 {
+  margin: 0 0 3px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.office-name {
+  margin-bottom: 5px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.office-services {
+  margin-bottom: 7px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.office-badges {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
+.status-badge,
+.booking-badge {
+  display: inline-block;
+  max-width: 100%;
+  padding: 3px 9px;
+  border-radius: 20px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.status-badge {
+  background: #199447;
+}
+
+.booking-badge {
+  background: #2442c5;
+}
+
+.walk-in-badge {
+  background: #2442c5;
+}
+
+.book-now-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.book-now-button {
+  min-width: 127px;
+  padding: 14px 20px;
+  border: none;
+  border-radius: 6px;
+  background: #2442c5;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.book-now-button:hover {
+  background: #1b329a;
+}
+
+@media (max-width: 600px) {
+  .home-main {
+    padding: 14px 12px 22px;
+  }
+
+  .office-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .home-hero {
+    padding: 17px 14px;
+  }
+
+  .home-hero h2 {
+    font-size: 19px;
+  }
+
+  .office-card {
+    min-height: auto;
+  }
+}
