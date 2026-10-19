@@ -1,10 +1,10 @@
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import Home from "./pages/Home.jsx";
-import Srau from "./pages/Srau.jsx";
-import Hsu from "./pages/Hsu.jsx";
-import Misu from "./pages/Misu.jsx";
-import Bau from "./pages/bau.jsx";
+import Srau from "./pages/offices/Srau.jsx";
+import Hsu from "./pages/offices/Hsu.jsx";
+import Misu from "./pages/offices/Misu.jsx";
+import Bau from "./pages/offices/Bau.jsx";
 import MyAppointments from "./pages/MyAppointments.jsx";
 
 export default function App() {
@@ -22,17 +22,21 @@ export default function App() {
     return <Srau />;
   }
 
-  if (path === "/hsu") 
+  if (path === "/hsu") {
     return <Hsu />;
+  }
 
-  if (path === "/misu") 
+  if (path === "/misu") {
     return <Misu />;
+  }
 
-  if (path === "/bau") 
+  if (path === "/bau") {
     return <Bau />;
-  
-  if (path === "/appointments") 
+  }
+
+  if (path === "/appointments") {
     return <MyAppointments />;
-  
+  }
+
   return <Login />;
 }
