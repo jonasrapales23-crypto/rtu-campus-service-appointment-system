@@ -1,0 +1,360 @@
+.srau-main {
+  flex: 1;
+  padding: 12px 12px 16px;
+  color: #102b57;
+  font-size: 11px;
+}
+
+.srau-title {
+  margin: 0 0 10px;
+  color: #102b57;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.srau-section {
+  margin-bottom: 12px;
+}
+
+.srau-section h2 {
+  margin: 0 0 6px;
+  color: #102b57;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.srau-service-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.srau-service-option {
+  min-height: 32px;
+  padding: 7px 8px;
+  border: 1px solid #d0d9eb;
+  border-radius: 7px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.srau-service-option.selected {
+  border: 1.5px solid #2442e8;
+  background: #e8ecf5;
+  box-shadow: 0 0 0 1px rgba(36, 66, 232, 0.05);
+}
+
+.srau-service-option:focus-visible {
+  outline: 2px solid #2442e8;
+  outline-offset: 2px;
+}
+
+.srau-fee-note {
+  margin-top: 10px;
+  padding: 8px;
+  border-radius: 6px;
+  background: #e8ecf5;
+  color: #102b57;
+  line-height: 1.5;
+}
+
+.srau-upload-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.srau-upload-box {
+  min-width: 0;
+  min-height: 77px;
+  padding: 9px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  border: 1px solid #cbd4e6;
+  border-radius: 6px;
+  background: #e8ecf5;
+  color: #102b57;
+  text-align: center;
+  line-height: 1.35;
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.srau-upload-box:has(input:focus-visible) {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}
+
+.srau-upload-box input {
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.upload-icon {
+  font-size: 12px;
+}
+
+.upload-note {
+  font-size: 10px;
+  color: #52617a;
+}
+
+.upload-file-name {
+  max-width: 100%;
+  font-size: 10px;
+  color: #176534;
+  overflow-wrap: anywhere;
+}
+
+.upload-action {
+  color: #2442c5;
+  font-size: 10px;
+  text-decoration: underline;
+}
+
+.srau-help {
+  margin-top: 4px;
+  color: #102b57;
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.srau-claimant-select {
+  display: block;
+  width: 100%;
+  min-height: 26px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: #e8ecf5;
+  color: #102b57;
+  font: inherit;
+}
+
+.srau-claimant-files {
+  margin-top: 7px;
+}
+
+.srau-receiver-name {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 8px;
+  border-radius: 5px;
+  background: #e8ecf5;
+  font-weight: 700;
+}
+
+.srau-receiver-name input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 7px;
+  border: 1px solid #cbd4e6;
+  border-radius: 4px;
+  background: white;
+  color: #102b57;
+  font-size: 11px;
+}
+
+.srau-earliest {
+  margin: 0 0 7px;
+  font-size: 10px;
+}
+
+.srau-schedule {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.srau-calendar {
+  min-width: 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: #e8ecf5;
+}
+
+.srau-calendar h3 {
+  margin: 0 0 8px;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.srau-weekdays,
+.srau-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+
+.srau-weekdays {
+  margin-bottom: 5px;
+  color: #71809a;
+  font-size: 9px;
+  font-style: italic;
+}
+
+.srau-calendar-days button {
+  min-width: 0;
+  height: 19px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #102b57;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.srau-calendar-days button:disabled {
+  color: #b9c2d3;
+  cursor: not-allowed;
+}
+
+.srau-calendar-days button.selected {
+  background: #2442c5;
+  color: #ffffff;
+}
+
+.srau-time-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.srau-time-slots button {
+  min-width: 0;
+  min-height: 23px;
+  padding: 4px 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.srau-time-slots button.selected {
+  background: #2442c5;
+  color: white;
+}
+
+.srau-time-slots button:disabled {
+  color: #a3a9b5;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.srau-message {
+  margin: 8px 0;
+  padding: 8px;
+  border-radius: 5px;
+  background: #fff0f0;
+  color: #a11a1a;
+  line-height: 1.5;
+}
+
+.srau-generate-button {
+  margin-top: 2px;
+  padding: 7px 11px;
+  border: none;
+  border-radius: 5px;
+  background: #2442c5;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.srau-generate-button:hover {
+  background: #1b329a;
+}
+
+.srau-calendar-header {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.srau-calendar-header h3 {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.srau-calendar-header button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #102b57;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.srau-calendar-header button:hover:not(:disabled) {
+  background: #d4ddef;
+}
+
+.srau-calendar-header button:disabled {
+  color: #b9c2d3;
+  cursor: not-allowed;
+}
+
+.srau-calendar-empty {
+  height: 19px;
+}
+
+.srau-calendar-days button:not(:disabled):hover {
+  outline: 1px solid #2442c5;
+  outline-offset: -1px;
+}
+
+.srau-time-panel {
+  min-width: 0;
+}
+
+.srau-selected-date {
+  margin: 0 0 6px;
+  color: #52617a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+@media (max-width: 400px) {
+  .srau-schedule {
+    grid-template-columns: 1fr;
+  }
+
+  .srau-calendar {
+    width: auto;
+  }
+
+  .srau-time-slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

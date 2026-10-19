@@ -1,4 +1,4 @@
-
+import { useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import "../styles/Login.css";
@@ -12,6 +12,7 @@ const offices = [
     status: "Open today · 8:00 AM–5:00 PM",
     booking: "Book up to 5 working days ahead",
     showBooking: true,
+    path: "/hsu",
   },
   {
     code: "SRAU",
@@ -20,6 +21,7 @@ const offices = [
     status: "Open today · 8:00 AM–5:00 PM",
     booking: "Book up to 5 working days ahead",
     showBooking: true,
+    path: "/srau",
   },
   {
     code: "MISU",
@@ -28,20 +30,52 @@ const offices = [
     status: "Open today · 8:00 AM–5:00 PM",
     booking: "Served as students arrive",
     showBooking: false,
+    path: "/misu",
   },
   {
     code: "BAU",
     name: "Business Affairs Unit",
-    services: "Uniforms, books, Sablay, graduation pictorial, concessionaires",
+    services:
+      "Uniforms, books, Sablay, graduation pictorial, concessionaires",
     status: "Open today · 8:00 AM–5:00 PM",
     booking: "Book up to 5 working days ahead",
     showBooking: true,
+    path: "/bau",
   },
 ];
 
 export default function Home() {
+  const [selectedOffice, setSelectedOffice] = useState(null);
+  const [message, setMessage] = useState("");
+
+  // Clicking a card selects it without opening its page.
+  function handleOfficeClick(office) {
+    setSelectedOffice(office.code);
+    setMessage("");
+  }
+
+  // Allows users to select a card using Enter or Space.
+  function handleOfficeKeyDown(event, office) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handleOfficeClick(office);
+    }
+  }
+
+  // Opens the selected office only after clicking Book now.
   function handleBookNow() {
-    window.location.href = "/appointments";
+    if (!selectedOffice) {
+      setMessage("Please select an office before clicking Book now.");
+      return;
+    }
+
+    const office = offices.find(
+      (item) => item.code === selectedOffice
+    );
+
+    if (office?.path) {
+      window.location.href = office.path;
+    }
   }
 
   return (
@@ -68,40 +102,75 @@ export default function Home() {
         <section className="offices-section">
           <h2>Offices and services offered</h2>
 
+          <p className="office-selection-hint">
+            Select an office to continue with your booking.
+          </p>
+
           <div className="office-grid">
-            {offices.map((office) => (
-              <article className="office-card" key={office.code}>
-                <h3>{office.code}</h3>
-                <p className="office-name">{office.name}</p>
-                <p className="office-services">{office.services}</p>
+            {offices.map((office) => {
+              const isSelected =
+                selectedOffice === office.code;
 
-                <div className="office-badges">
-                  <span className="status-badge">
-                    {office.status}
-                  </span>
+              return (
+                <article
+                  key={office.code}
+                  className={`office-card clickable-office ${
+                    isSelected ? "selected-office" : ""
+                  }`}
+                  role="button"
+                  tabIndex={0}
+                  aria-pressed={isSelected}
+                  onClick={() => handleOfficeClick(office)}
+                  onKeyDown={(event) =>
+                    handleOfficeKeyDown(event, office)
+                  }
+                >
+                  <h3>{office.code}</h3>
 
-                  <span
-                    className={
-                      office.showBooking
-                        ? "booking-badge"
-                        : "booking-badge walk-in-badge"
-                    }
-                  >
-                    {office.booking}
-                  </span>
-                </div>
-              </article>
-            ))}
+                  <p className="office-name">
+                    {office.name}
+                  </p>
+
+                  <p className="office-services">
+                    {office.services}
+                  </p>
+
+                  <div className="office-badges">
+                    <span className="status-badge">
+                      {office.status}
+                    </span>
+
+                    <span
+                      className={
+                        office.showBooking
+                          ? "booking-badge"
+                          : "booking-badge walk-in-badge"
+                      }
+                    >
+                      {office.booking}
+                    </span>
+                  </div>
+                </article>
+              );
+            })}
           </div>
 
           <div className="book-now-row">
-            <button
-              type="button"
-              className="book-now-button"
-              onClick={handleBookNow}
-            >
-              Book now
-            </button>
+            <div className="book-now-content">
+              {message && (
+                <p className="booking-message" role="status">
+                  {message}
+                </p>
+              )}
+
+              <button
+                type="button"
+                className="book-now-button"
+                onClick={handleBookNow}
+              >
+                Book now
+              </button>
+            </div>
           </div>
         </section>
       </main>

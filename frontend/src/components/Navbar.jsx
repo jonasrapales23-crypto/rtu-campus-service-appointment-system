@@ -1,7 +1,6 @@
-
 import { useState } from "react";
 
-export default function Navbar({ activePage = "home" }) {
+export default function Navbar({ activePage = "" }) {
   const [search, setSearch] = useState("");
 
   function handleSearch(event) {
