@@ -4,6 +4,7 @@ export default function ServicePicker({
   value,
   onChange,
   processingDays,
+  note,
 }) {
   return (
     <section className="srau-section">
@@ -25,11 +26,15 @@ export default function ServicePicker({
         ))}
       </div>
 
-      <div className="srau-fee-note">
-        <strong>Fee:</strong> ₱ — (paid at the counter) ·{" "}
-        <strong>Processing:</strong> {processingDays} working days. The
-        office prepares your document before you arrive.
-      </div>
+      {note ? (
+        <div className="srau-fee-note">{note}</div>
+      ) : (
+        <div className="srau-fee-note">
+          <strong>Fee:</strong> ₱ — (paid at the counter) ·{" "}
+          <strong>Processing:</strong> {processingDays} working days. The
+          office prepares your document before you arrive.
+        </div>
+      )}
     </section>
   );
 }
