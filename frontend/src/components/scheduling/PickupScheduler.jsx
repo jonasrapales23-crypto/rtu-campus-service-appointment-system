@@ -3,14 +3,23 @@ import TimeSlots from "./TimeSlots.jsx";
 import { formatDate } from "../../utils/dates.js";
 
 // Step "Pick a pickup date and time": calendar + time slots together.
-export default function PickupScheduler({ schedule, timeSlots }) {
+// Defaults match SRAU; other offices pass `step`, `kind` and `afterProcessing`.
+export default function PickupScheduler({
+  schedule,
+  timeSlots,
+  step = 4,
+  kind = "pickup",
+  afterProcessing = true,
+}) {
   return (
     <section className="srau-section">
-      <h2>4 · Pick a pickup date and time</h2>
+      <h2>
+        {step} · Pick a {kind} date and time
+      </h2>
 
       <p className="srau-earliest">
-        Earliest pickup: {formatDate(schedule.earliestPickup)} (after
-        processing).
+        Earliest {kind}: {formatDate(schedule.earliestPickup)}
+        {afterProcessing ? " (after processing)." : "."}
       </p>
 
       <div className="srau-schedule">

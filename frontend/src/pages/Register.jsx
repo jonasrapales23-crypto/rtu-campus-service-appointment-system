@@ -1,16 +1,21 @@
-import { useState } from "react";
 import Navbar from "../components/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import "../styles/Register.css";
 
 export default function Register() {
-  const [message, setMessage] = useState("");
-
   function handleRegister(event) {
     event.preventDefault();
-    setMessage(
-      "Registration and email verification will be available when the backend is connected."
-    );
+
+    // Remember the email so the verify screen can show it (masked).
+    const email = new FormData(event.currentTarget).get("personalEmail");
+
+    try {
+      sessionStorage.setItem("rtu-ccsas.pendingEmail", String(email ?? ""));
+    } catch {
+      // Storage can be blocked; the verify screen then shows "your email".
+    }
+
+    window.location.href = "/verify";
   }
 
   return (
@@ -96,12 +101,6 @@ export default function Register() {
                 required
               />
             </div>
-
-            {message && (
-              <p className="register-message" role="status">
-                {message}
-              </p>
-            )}
 
             <button className="register-button" type="submit">
               Send verification code

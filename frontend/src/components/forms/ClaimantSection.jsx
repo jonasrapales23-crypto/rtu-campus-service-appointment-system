@@ -2,7 +2,7 @@ import UploadBox from "./UploadBox.jsx";
 
 // Step "Who will claim the document?" (me / someone else + receiver files).
 // `value` holds { claimant, authorizationLetter, receiverId, receiverName }.
-export default function ClaimantSection({ value, onChange }) {
+export default function ClaimantSection({ step = 3, value, onChange }) {
   const { claimant, authorizationLetter, receiverId, receiverName } = value;
 
   function update(patch) {
@@ -11,7 +11,7 @@ export default function ClaimantSection({ value, onChange }) {
 
   return (
     <section className="srau-section">
-      <h2>3 · Who will claim the document?</h2>
+      <h2>{step} · Who will claim the document?</h2>
 
       <select
         className="srau-claimant-select"

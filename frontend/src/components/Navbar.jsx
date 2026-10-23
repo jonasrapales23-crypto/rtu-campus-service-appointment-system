@@ -1,14 +1,27 @@
 import { useState } from "react";
+import "../styles/Navbar.css";
 
 export default function Navbar({ activePage = "" }) {
-  const [search, setSearch] = useState("");
+  // On the search page the box starts with the current query.
+  const [search, setSearch] = useState(() =>
+    window.location.pathname === "/search"
+      ? (new URLSearchParams(window.location.search).get("q") ?? "")
+      : ""
+  );
+  const [menuOpen, setMenuOpen] = useState(false);
 
   function handleSearch(event) {
     event.preventDefault();
 
-    if (search.trim()) {
-      alert("Service search will be connected to the backend later.");
+    const query = search.trim();
+
+    if (query) {
+      window.location.href = `/search?q=${encodeURIComponent(query)}`;
     }
+  }
+
+  function handleLogout() {
+    alert("Logout will be connected later.");
   }
 
   return (
@@ -37,6 +50,17 @@ export default function Navbar({ activePage = "" }) {
         />
       </form>
 
+      <button
+        className="nav-burger"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded={menuOpen}
+        aria-controls="nav-drawer"
+        onClick={() => setMenuOpen((open) => !open)}
+      >
+        ☰
+      </button>
+
       <nav className="nav-links" aria-label="Main navigation">
         <a
           href="/home"
@@ -46,13 +70,7 @@ export default function Navbar({ activePage = "" }) {
           Home
         </a>
 
-        <a
-          href="/about"
-          className={activePage === "about" ? "active-nav" : ""}
-          aria-current={activePage === "about" ? "page" : undefined}
-        >
-          About
-        </a>
+        <a href="/home#about">About</a>
 
         <a
           href="/appointments"
@@ -69,11 +87,26 @@ export default function Navbar({ activePage = "" }) {
         <button
           className="logout-button"
           type="button"
-          onClick={() => alert("Logout will be connected later.")}
+          onClick={handleLogout}
         >
           Logout
         </button>
       </nav>
+
+      {menuOpen && (
+        <nav
+          id="nav-drawer"
+          className="nav-drawer"
+          aria-label="Mobile navigation"
+        >
+          <a href="/home">Home</a>
+          <a href="/appointments">My Appointments</a>
+          <a href="/appointments?tab=history">History</a>
+          <button type="button" onClick={handleLogout}>
+            Logout
+          </button>
+        </nav>
+      )}
     </header>
   );
 }
