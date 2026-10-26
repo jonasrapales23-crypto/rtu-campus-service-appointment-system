@@ -1,4 +1,4 @@
-import Navbar from "../components/Navbar.jsx";
+import Navbar from "../navbar/Navbar.jsx";
 import { searchServices } from "../data/serviceCatalog.js";
 import { offices } from "../data/offices.js";
 import "../styles/Login.css";

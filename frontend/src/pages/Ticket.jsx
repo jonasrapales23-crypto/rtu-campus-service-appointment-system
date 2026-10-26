@@ -1,4 +1,4 @@
-import Navbar from "../components/Navbar.jsx";
+import Navbar from "../navbar/Navbar.jsx";
 import { getAppointment } from "../services/appointments.js";
 import { downloadTicketImage } from "../utils/ticketImage.js";
 import { formatDate, parseDateKey } from "../utils/dates.js";

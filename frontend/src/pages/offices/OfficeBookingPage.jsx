@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Navbar from "../../components/Navbar.jsx";
+import Navbar from "../../navbar/Navbar.jsx";
 import Modal from "../../components/Modal.jsx";
 import ServicePicker from "../../components/forms/ServicePicker.jsx";
 import RequirementsUpload from "../../components/forms/RequirementsUpload.jsx";

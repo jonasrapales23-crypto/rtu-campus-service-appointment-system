@@ -1,0 +1,6 @@
+import StatusBadge from "./StatusBadge.jsx";
+
+export default function AppointmentTable({ rows, onVerify, onStatus, reviewOnly = false, hideActions = false }) {
+  if (!rows.length) return <div className="srau-empty-state"><b>No appointments found</b><p>Try a different search or filter.</p></div>;
+  return <div className="srau-simple-table"><table><thead><tr><th>Control no.</th><th>Student</th><th>Request</th><th>Time</th><th>Status</th>{!hideActions && <th>Actions</th>}</tr></thead><tbody>{rows.map((item) => <tr key={item.id}><td><span className="srau-table-control">{item.short}</span></td><td><b>{item.student}</b><small className="srau-cell-sub">{item.number} · {item.program}</small></td><td>{item.service}</td><td>{item.time}</td><td><StatusBadge status={item.status} /></td>{!hideActions && <td><div className="srau-table-actions"><button title="Review appointment details" onClick={() => onVerify(item)}>Review</button>{!reviewOnly && !["Served", "Claimed", "No-show"].includes(item.status) && <button title="Mark served" onClick={() => onStatus(item.id, "Served")}>Served</button>}{!reviewOnly && item.status !== "No-show" && item.status !== "Served" && item.status !== "Claimed" && <button title="Mark no-show" onClick={() => onStatus(item.id, "No-show")}>No-show</button>}</div></td>}</tr>)}</tbody></table></div>;
+}

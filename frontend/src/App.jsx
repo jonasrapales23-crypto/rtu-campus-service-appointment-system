@@ -9,9 +9,14 @@ import MyAppointments from "./pages/MyAppointments.jsx";
 import Verify from "./pages/Verify.jsx";
 import Ticket from "./pages/Ticket.jsx";
 import Search from "./pages/Search.jsx";
+import SrauAdmin from "./adminside/SrauAdmin/SrauAdmin.jsx";
 
 export default function App() {
   const path = window.location.pathname;
+
+  if (path === "/srau-admin") {
+    return <SrauAdmin />;
+  }
 
   if (path === "/register") {
     return <Register />;
