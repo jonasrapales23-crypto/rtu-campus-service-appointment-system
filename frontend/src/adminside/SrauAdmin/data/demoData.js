@@ -1,9 +1,18 @@
 export const initialAppointments = [
-  { id: "10-19-R-014-TOR-482913", short: "…-014-TOR", student: "Juan Dela Cruz", number: "2023-00123", program: "BSIT", service: "Transcript of Records", date: "2026-10-27", time: "9:00 AM", type: "Booked", status: "Processing" },
-  { id: "10-19-R-016-CTC-482914", short: "…-016-CTC", student: "Maria Santos", number: "2022-00451", program: "BSCS", service: "CTC / Authentication", date: "2026-10-27", time: "9:30 AM", type: "Booked", status: "Ready for pickup" },
+  { id: "10-27-R-014-TOR-482913", short: "…-014-TOR", student: "Juan Dela Cruz", number: "2023-00123", program: "BSIT", service: "Transcript of Records", date: "2026-10-27", time: "9:00 AM", type: "Booked", status: "Processing" },
+  { id: "10-27-R-016-CTC-482914", short: "…-016-CTC", student: "Maria Santos", number: "2022-00451", program: "BSCS", service: "CTC / Authentication", date: "2026-10-27", time: "9:30 AM", type: "Booked", status: "Ready for pickup" },
+  { id: "10-27-R-017-CER-482915", short: "…-017-CER", student: "Angela Mendoza", number: "2024-00214", program: "BSBA", service: "Certificates", date: "2026-10-27", time: "10:00 AM", type: "Booked", status: "Submitted" },
+  { id: "10-27-R-018-DIP-482916", short: "…-018-DIP", student: "Miguel Ramos", number: "2021-00602", program: "BSED", service: "Diploma", date: "2026-10-27", time: "10:30 AM", type: "Booked", status: "Needs processing" },
+  { id: "10-27-R-019-TOR-482917", short: "…-019-TOR", student: "Sofia Garcia", number: "2022-00741", program: "BSIT", service: "Transcript of Records", date: "2026-10-27", time: "11:00 AM", type: "Booked", status: "Processing" },
+  { id: "10-27-R-020-CTC-482918", short: "…-020-CTC", student: "Daniel Flores", number: "2023-00531", program: "BSCS", service: "CTC / Authentication", date: "2026-10-27", time: "1:00 PM", type: "Booked", status: "Needs processing" },
+  { id: "10-27-R-021-CER-482919", short: "…-021-CER", student: "Isabella Cruz", number: "2020-00318", program: "BSBA", service: "Certificates", date: "2026-10-27", time: "1:30 PM", type: "Booked", status: "Ready for pickup" },
+  { id: "10-27-R-022-TOR-482920", short: "…-022-TOR", student: "Gabriel Bautista", number: "2021-00199", program: "BSIT", service: "Transcript of Records", date: "2026-10-27", time: "2:00 PM", type: "Booked", status: "Submitted" },
+  { id: "10-27-R-023-DIP-482921", short: "…-023-DIP", student: "Patricia Villanueva", number: "2019-00817", program: "BSED", service: "Diploma", date: "2026-10-27", time: "2:30 PM", type: "Booked", status: "Processing" },
+  { id: "10-27-R-024-CTC-482922", short: "…-024-CTC", student: "Rafael Aquino", number: "2024-00175", program: "BSCS", service: "CTC / Authentication", date: "2026-10-27", time: "3:00 PM", type: "Booked", status: "Needs processing" },
   { id: "WALK-IN-001", short: "—", student: "Pedro Reyes", number: "2024-00088", program: "BSIT", service: "CTC / Authentication", date: "2026-10-27", time: "Walk-in", type: "Walk-in", status: "Served" },
-  { id: "10-12-R-011-DIP-482911", short: "…-011-DIP", student: "Ana Lim", number: "2021-00820", program: "BSED", service: "Diploma", date: "2026-10-12", time: "8:30 AM", type: "Booked", status: "No-show" },
-  { id: "10-12-R-012-CER-482912", short: "…-012-CER", student: "Ben Cruz", number: "2020-00213", program: "BSBA", service: "Certificates", date: "2026-10-12", time: "8:30 AM", type: "Booked", status: "Claimed" },
+  { id: "10-27-R-025-CER-482923", short: "…-025-CER", student: "Camila Torres", number: "2020-00409", program: "BSBA", service: "Certificates", date: "2026-10-27", time: "3:30 PM", type: "Booked", status: "Claimed" },
+  { id: "10-26-R-011-DIP-482911", short: "…-011-DIP", student: "Ana Lim", number: "2021-00820", program: "BSED", service: "Diploma", date: "2026-10-26", time: "8:30 AM", type: "Booked", status: "No-show" },
+  { id: "10-26-R-012-CER-482912", short: "…-012-CER", student: "Ben Cruz", number: "2020-00213", program: "BSBA", service: "Certificates", date: "2026-10-26", time: "8:30 AM", type: "Booked", status: "Done" },
 ];
 export const initialServices = [
   { name: "Transcript of Records", available: true, fee: "₱ ___", processing: "5 working days", pickup: true, eligibility: "All students", requirements: "Valid ID · Other documents set by the office", notes: "Bring your control number and valid ID." },
@@ -20,7 +29,7 @@ export const HANDLED_STATUSES = new Set([
   "served", "claimed", "done", "no-show", "completed", "cancelled", "canceled",
   "picked up", "picked-up", "collected", "fulfilled", "closed",
 ]);
-export const PENDING_REQUEST_STATUSES = new Set(["submitted", "need processing", "needs processing"]);
+export const PENDING_REQUEST_STATUSES = new Set(["submitted", "needs processing"]);
 const normalizeStatus = (status) => String(status ?? "").trim().toLowerCase().replace(/\s+/g, " ");
 const isHandled = (item) => HANDLED_STATUSES.has(normalizeStatus(item.status));
 const isPendingRequest = (item) => PENDING_REQUEST_STATUSES.has(normalizeStatus(item.status));
