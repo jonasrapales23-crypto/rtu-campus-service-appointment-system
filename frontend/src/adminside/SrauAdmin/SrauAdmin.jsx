@@ -7,7 +7,7 @@ import SearchInput from "./components/SearchInput.jsx";
 import AppointmentTable from "./components/AppointmentTable.jsx";
 import AdminModal from "./components/AdminModal.jsx";
 import { initialAppointments, initialServices, times } from "./data/demoData.js";
-import { isHandled, isPendingRequest } from "./utils/status.js";
+import { isHandled, isPendingRequest, normalizeStatus } from "./utils/status.js";
 
 
 
@@ -129,7 +129,7 @@ export default function SrauAdmin() {
                 <span><b>New requests to process</b><small>Review submitted student requests</small></span>
                 <span className={`srau-attention-count ${requestsToProcess.length > 0 ? "has-items" : "zero-items"}`}>{requestsToProcess.length}</span><span className="srau-arrow">›</span>
               </button>
-              <button className="srau-attention-row" onClick={() => { setSection("Reports"); setReportsView("Appointments"); setStatusFilter("Ready for pickup"); setQuery(""); }}>
+              <button className="srau-attention-row" onClick={() => { setSection("Queue"); setStatusFilter("Ready for pickup"); setQuery(""); }}>
                 <span className="srau-attention-icon">✓</span>
                 <span><b>Requests ready for pickup today</b><small>Confirm identity at the counter</small></span>
                 <span className={`srau-attention-count ${readyForPickupToday.length > 0 ? "has-items" : "zero-items"}`}>{readyForPickupToday.length}</span><span className="srau-arrow">›</span>
