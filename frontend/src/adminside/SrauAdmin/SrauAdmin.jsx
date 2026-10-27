@@ -6,6 +6,8 @@ import SectionHeading from "./components/SectionHeading.jsx";
 import SearchInput from "./components/SearchInput.jsx";
 import AppointmentTable from "./components/AppointmentTable.jsx";
 import AdminModal from "./components/AdminModal.jsx";
+import ConfirmItemReadyModal from "../components/ConfirmItemReadyModal.jsx";
+import VerifyAtCounterModal from "../components/VerifyAtCounterModal.jsx";
 import { initialAppointments, initialServices, times } from "./data/demoData.js";
 import { isHandled, isPendingRequest, normalizeStatus } from "./utils/status.js";
 
@@ -70,7 +72,7 @@ export default function SrauAdmin() {
       announce("This request can only be reviewed after it has been marked Ready for pickup.");
       return;
     }
-    setSelectedAppointment(item); setVerifyQuery(item.id); setVerifyChecks([false, false, false, false]); setSection("Verify at counter");
+    setSelectedAppointment(item); setVerifyQuery(item.id); setVerifyChecks([false, false, false, false]); setModal("verify-counter");
   }
   function requestMarkReady(item) { setReadyCandidate(item); setModal("confirm-ready"); }
   function confirmMarkReady() {
@@ -82,12 +84,9 @@ export default function SrauAdmin() {
   }
   function completeReview(status) {
     if (normalizeStatus(selectedAppointment?.status) !== "ready for pickup") { announce("Only requests marked Ready for pickup can be reviewed at the counter."); return; }
-    if (status === "Served" && !verifyChecks.every(Boolean)) { announce("Please check all four verification fields first."); return; }
     updateStatus(selectedAppointment.id, status);
-    setSection("Queue");
-    setStatusFilter("All");
-    setQuery("");
-    setNotice(`${selectedAppointment.student}'s appointment marked ${status.toLowerCase()}. Returned to today's queue.`);
+    setModal("");
+    setNotice(`${selectedAppointment.student}'s appointment marked ${status.toLowerCase()}. Returned to the previous section.`);
   }
   function openServiceEditor(service = null) {
     setServiceOriginalName(service?.name ?? null);
@@ -186,7 +185,8 @@ export default function SrauAdmin() {
         </>}
     </main>
 
-    {modal === "confirm-ready" && readyCandidate && <AdminModal title="Confirm item is ready" onClose={() => { setModal(""); setReadyCandidate(null); }}><div className="srau-modal-form"><p>Have you prepared the requested item and confirmed that it is available for pickup?</p><div className="srau-request-summary"><h3>{readyCandidate.service}</h3><p>{readyCandidate.student} · {readyCandidate.number}</p><div className="srau-summary-line"><span>Control number</span><b>{readyCandidate.id}</b></div><div className="srau-summary-line"><span>Current status</span><StatusBadge status={readyCandidate.status} /></div></div><p className="srau-help-text">The status will change to Ready for pickup only after you confirm.</p><div className="srau-button-row"><button type="button" className="srau-button srau-button-outline" onClick={() => { setModal(""); setReadyCandidate(null); }}>Not yet</button><button type="button" className="srau-button srau-button-primary" onClick={confirmMarkReady}>Yes, item is ready</button></div></div></AdminModal>}
+    {modal === "confirm-ready" && readyCandidate && <ConfirmItemReadyModal item={readyCandidate} officeLabel="SRAU · University Registrar's Office" onClose={() => { setModal(""); setReadyCandidate(null); }} onConfirm={confirmMarkReady} />}
+    {modal === "verify-counter" && selectedAppointment && <VerifyAtCounterModal item={selectedAppointment} officeLabel="SRAU · University Registrar's Office" onClose={() => setModal("")} onComplete={completeReview} /> }
     {modal === "walkin" && <AdminModal title="Add walk-in student" onClose={() => setModal("")}><form className="srau-modal-form" onSubmit={addWalkIn}><label>Student name<input autoFocus value={walkIn.student} onChange={(e) => setWalkIn({ ...walkIn, student: e.target.value })} placeholder="Full name" /></label><label>Student number<input value={walkIn.number} onChange={(e) => setWalkIn({ ...walkIn, number: e.target.value })} placeholder="e.g. 2023-00123" /></label><label>Program<select value={walkIn.program} onChange={(e) => setWalkIn({ ...walkIn, program: e.target.value })}><option value="">Select program</option>{["BSIT", "BSCS", "BSBA", "BSED", "BEED", "Other"].map((p) => <option key={p}>{p}</option>)}</select></label><label>Service<select value={walkIn.service} onChange={(e) => setWalkIn({ ...walkIn, service: e.target.value })}>{services.map((s) => <option key={s.name}>{s.name}</option>)}</select></label><p className="srau-help-text">No ticket is created. This records the student in the local demo queue.</p><div className="srau-button-row"><button type="button" className="srau-button srau-button-outline" onClick={() => setModal("")}>Cancel</button><button className="srau-button srau-button-primary">Save walk-in</button></div></form></AdminModal>}
     {modal === "slot" && <AdminModal title="Add a time slot" onClose={() => setModal("")}><form className="srau-modal-form" onSubmit={(e) => { e.preventDefault(); const time = e.currentTarget.elements.slotTime.value; if (slots.some((s) => s.time === time)) { announce("That time slot already exists."); return; } setSlots((old) => [...old, { time, capacity: Number(slotCapacity), booked: 0, closed: Number(slotCapacity) === 0 }]); setModal(""); announce(`${time} added to the demo schedule.`); }}><label>Time<input name="slotTime" type="time" required /></label><label>Capacity<input type="number" min="0" max="99" value={slotCapacity} onChange={(e) => setSlotCapacity(e.target.value)} required /></label><div className="srau-button-row"><button type="button" className="srau-button srau-button-outline" onClick={() => setModal("")}>Cancel</button><button className="srau-button srau-button-primary">Add slot</button></div></form></AdminModal>}
     {modal === "service" && serviceDraft && <AdminModal title={services.some((s) => s.name === serviceDraft.name) ? "Edit service" : "Add service"} onClose={() => setModal("")}><form className="srau-modal-form" onSubmit={saveService}><label>Service name<input value={serviceDraft.name} onChange={(e) => setServiceDraft({ ...serviceDraft, name: e.target.value })} required /></label><label>Fee<input value={serviceDraft.fee} onChange={(e) => setServiceDraft({ ...serviceDraft, fee: e.target.value })} /></label><label>Processing time<input value={serviceDraft.processing} onChange={(e) => setServiceDraft({ ...serviceDraft, processing: e.target.value })} /></label><label>Eligibility<select value={serviceDraft.eligibility} onChange={(e) => setServiceDraft({ ...serviceDraft, eligibility: e.target.value })}>{["All students", "Graduates", "Currently enrolled", "Other"].map((x) => <option key={x}>{x}</option>)}</select></label><label>Requirements<textarea value={serviceDraft.requirements} onChange={(e) => setServiceDraft({ ...serviceDraft, requirements: e.target.value })} rows="2" /></label><label>Notes shown to students<textarea value={serviceDraft.notes} onChange={(e) => setServiceDraft({ ...serviceDraft, notes: e.target.value })} rows="2" /></label><label className="srau-inline-check"><input type="checkbox" checked={serviceDraft.available} onChange={(e) => setServiceDraft({ ...serviceDraft, available: e.target.checked })} /> Service is available</label><div className="srau-button-row"><button type="button" className="srau-button srau-button-outline" onClick={() => setModal("")}>Cancel</button><button className="srau-button srau-button-primary">Save service</button></div></form></AdminModal>}

@@ -10,12 +10,17 @@ import Verify from "./pages/Verify.jsx";
 import Ticket from "./pages/Ticket.jsx";
 import Search from "./pages/Search.jsx";
 import SrauAdmin from "./adminside/SrauAdmin/SrauAdmin.jsx";
+import MisuAdmin from "./adminside/MisuAdmin/MisuAdmin.jsx";
 
 export default function App() {
   const path = window.location.pathname;
 
   if (path === "/srau-admin") {
     return <SrauAdmin />;
+  }
+
+  if (path === "/misu-admin") {
+    return <MisuAdmin />;
   }
 
   if (path === "/register") {

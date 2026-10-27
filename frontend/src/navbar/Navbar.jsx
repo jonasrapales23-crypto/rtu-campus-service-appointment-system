@@ -26,15 +26,15 @@ export default function Navbar({ activePage = "", accountType = "student", admin
     window.location.href = "/";
   }
 
-  if (accountType === "srau-admin") {
-    const adminLinks = ["Dashboard", "Queue", "Requests", "Slots", "Services", "Reports"];
+  if (accountType === "srau-admin" || accountType === "misu-admin") {
+    const adminLinks = accountType === "misu-admin" ? ["Dashboard", "Queue", "Requests", "Records", "Services", "Reports"] : ["Dashboard", "Queue", "Requests", "Slots", "Services", "Reports"];
     return (
       <header className="navbar shared-admin-navbar">
         <img className="navbar-logo" src="/rtu-logo.png" alt="Rizal Technological University logo" />
         <a className="brand" href="/home" aria-label="RTU-CCSAS home">
           <span className="brand-name">RTU-CCSAS</span>
         </a>
-        <nav className="nav-links admin-nav-links" aria-label="SRAU admin navigation">
+        <nav className="nav-links admin-nav-links" aria-label={`${accountType === "misu-admin" ? "MISU" : "SRAU"} admin navigation`}>
           {adminLinks.map((item) => (
             <button key={item} type="button" className={adminSection === item ? "active-nav" : ""}
               aria-current={adminSection === item ? "page" : undefined}
@@ -76,6 +76,7 @@ export default function Navbar({ activePage = "", accountType = "student", admin
             onClick={() => setPermissionOpen((open) => !open)}>Change acc perm <span aria-hidden="true">▾</span></button>
           {permissionOpen && <div className="account-permission-menu" role="menu">
             <a href="/srau-admin" role="menuitem" onClick={() => setPermissionOpen(false)}>SRAU admin</a>
+            <a href="/misu-admin" role="menuitem" onClick={() => setPermissionOpen(false)}>MISU admin</a>
           </div>}
         </div>
         <button className="logout-button" type="button" onClick={handleLogout}>Logout</button>
@@ -84,8 +85,7 @@ export default function Navbar({ activePage = "", accountType = "student", admin
         <a href="/home">Home</a><a href="/appointments">My Appointments</a><a href="/appointments?tab=history">History</a>
         <button type="button" className="drawer-permission-toggle" aria-expanded={permissionOpen}
           onClick={() => setPermissionOpen((open) => !open)}>Change acc perm ▾</button>
-        {permissionOpen && <a className="drawer-permission-option" href="/srau-admin" role="menuitem"
-          onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>SRAU admin</a>}
+        {permissionOpen && <><a className="drawer-permission-option" href="/srau-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>SRAU admin</a><a className="drawer-permission-option" href="/misu-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>MISU admin</a></>}
         <button type="button" onClick={handleLogout}>Logout</button>
       </nav>}
     </header>
