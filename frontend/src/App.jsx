@@ -13,9 +13,14 @@ import SrauAdmin from "./adminside/SrauAdmin/SrauAdmin.jsx";
 import MisuAdmin from "./adminside/MisuAdmin/MisuAdmin.jsx";
 import HsuAdmin from "./adminside/HsuAdmin/HsuAdmin.jsx";
 import BauAdmin from "./adminside/BauAdmin/BauAdmin.jsx";
+import SuperAdmin from "./adminside/SuperAdmin/SuperAdmin.jsx";
 
 export default function App() {
   const path = window.location.pathname;
+
+  if (path === "/super-admin") {
+    return <SuperAdmin />;
+  }
 
   if (path === "/srau-admin") {
     return <SrauAdmin />;
