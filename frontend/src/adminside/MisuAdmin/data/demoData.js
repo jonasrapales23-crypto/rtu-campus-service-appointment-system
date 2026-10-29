@@ -4,7 +4,7 @@ export const initialMisuAppointments = [
   { id: "MISU-036-GRD", student: "Maria Santos", service: "Grade slip", status: "Ready for pickup" },
 ];
 export const initialMisuServices = [
-  { name: "Registration form", available: true, fee: "₱ ___", processing: "1–2 minutes" },
-  { name: "Grade slip", available: true, fee: "₱ ___", processing: "1–2 minutes" },
+  { name: "Registration form", available: true, fee: "Free · ₱150 if lost (reprint)", processing: "1–2 minutes" },
+  { name: "Grade slip", available: true, fee: "Free · ₱150 if lost (reprint)", processing: "1–2 minutes" },
   { name: "Other services", available: true, fee: "₱ ___", processing: "Set by office" },
 ];

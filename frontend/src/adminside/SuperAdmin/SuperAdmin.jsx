@@ -3,10 +3,10 @@ import Navbar from "../../navbar/Navbar.jsx";
 import "./SuperAdmin.css";
 
 const initialOffices = [
-  { name: "HSU", booked: 12, done: 5, noShow: 1, status: "Open", booking: "5 working days ahead", capacity: "60–100 / day", noShowRule: "Rebook", walkIns: "Yes", managedBy: "Staff" },
+  { name: "HSU", booked: 12, done: 5, noShow: 1, status: "Open", booking: "2 days ahead", capacity: "100 / day", noShowRule: "Rebook", walkIns: "Yes", managedBy: "Staff" },
   { name: "SRAU", booked: 9, done: 4, noShow: 0, status: "Open", booking: "5 working days ahead", capacity: "75–100 / day", noShowRule: "Rebook", walkIns: "Yes", managedBy: "Head or staff" },
   { name: "MISU", booked: 4, done: 2, noShow: 0, status: "Open", booking: "As students arrive", capacity: "60+ / day", noShowRule: "Remove from log", walkIns: "Yes", managedBy: "Staff at window" },
-  { name: "BAU", booked: 15, done: 6, noShow: 2, status: "Closed", booking: "5 working days ahead", capacity: "Books 350; uniforms 250; Sablay 200; grad pictorial 200", noShowRule: "Rebook", walkIns: "Yes", managedBy: "Head or staff" },
+  { name: "BAU", booked: 15, done: 6, noShow: 2, status: "Closed", booking: "1 day ahead", capacity: "Books 350; uniforms 250; Sablay 200; grad pictorial 200", noShowRule: "Rebook", walkIns: "Yes", managedBy: "Head or staff" },
 ];
 const initialAccounts = [
   { id: 1, name: "Ana Reyes", email: "ana.reyes@rtu.edu.ph", role: "Office admin", office: "HSU", active: true },
@@ -14,9 +14,9 @@ const initialAccounts = [
   { id: 3, name: "Carla Lim", email: "carla.lim@rtu.edu.ph", role: "Office admin", office: "SRAU", active: false },
 ];
 const initialServices = [
-  { office: "SRAU", service: "Transcript of Records (TOR)", fee: "Pending survey", processing: "5 working days", pickup: "Yes" },
-  { office: "SRAU", service: "Certified True Copy (CTC)", fee: "Pending survey", processing: "Set by office", pickup: "Yes" },
-  { office: "MISU", service: "Registration form", fee: "Pending survey", processing: "Set by office", pickup: "Yes" },
+  { office: "SRAU", service: "Transcript of Records (TOR)", fee: "₱350 + ₱30 doc stamp", processing: "7 working days", pickup: "Yes" },
+  { office: "SRAU", service: "Certified True Copy (CTC)", fee: "₱150", processing: "Set by office", pickup: "Yes" },
+  { office: "MISU", service: "Registration form", fee: "₱150 if lost (reprint)", processing: "Set by office", pickup: "Yes" },
 ];
 const initialAudit = [
   { time: "9:02 AM", user: "SRAU staff", action: "Closed slot 10:00 AM" },

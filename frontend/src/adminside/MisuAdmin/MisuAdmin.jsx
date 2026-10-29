@@ -14,7 +14,7 @@ const seed = [
  {id:"MISU-038-GRD",student:"Isabella Cruz",number:"2020-00318",program:"BSBA",service:"Grade slip",date:"2026-10-26",time:"8:40 AM",type:"Walk-in",status:"No-show",receiver:"Isabella Cruz"},
  {id:"MISU-039-OTH",student:"Gabriel Bautista",number:"2021-00199",program:"BSIT",service:"Other services",date:"2026-10-25",time:"2:00 PM",type:"Online request",status:"Claimed",receiver:"Gabriel Bautista"},
 ];
-const defaultServices=[{name:"Registration form",available:true,fee:"₱ ___",processing:"1–2 minutes"},{name:"Grade slip",available:true,fee:"₱ ___",processing:"1–2 minutes"},{name:"Other services",available:true,fee:"₱ ___",processing:"Set by office"}];
+const defaultServices=[{name:"Registration form",available:true,fee:"Free · ₱150 if lost (reprint)",processing:"1–2 minutes"},{name:"Grade slip",available:true,fee:"Free · ₱150 if lost (reprint)",processing:"1–2 minutes"},{name:"Other services",available:true,fee:"₱ ___",processing:"Set by office"}];
 const sections=["Dashboard","Queue","Requests","Records","Services","Reports"];
 const doneStatuses=["Served","Claimed","Done","No-show"];
 const badgeClass=(s)=>s.toLowerCase().replaceAll(" ","-");

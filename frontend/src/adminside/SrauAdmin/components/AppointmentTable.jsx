@@ -7,7 +7,7 @@ export default function AppointmentTable({ rows, onVerify, onStatus, onMarkReady
     const isReady = status === "ready for pickup";
     const isProcessing = status === "processing";
     const isWaiting = status === "submitted" || status === "needs processing";
-    const isClosed = ["served", "claimed", "no-show", "done"].includes(status);
+    const isClosed = ["served", "claimed", "no-show", "done", "cancelled", "canceled"].includes(status);
     return <tr key={item.id}><td><span className="srau-table-control">{item.short}</span></td><td><b>{item.student}</b><small className="srau-cell-sub">{item.number} · {item.program}</small></td><td>{item.service}</td><td>{item.time}</td><td><StatusBadge status={item.status} /></td>{!hideActions && <td><div className="srau-table-actions">
       {isProcessing && <button title="Confirm the requested item is ready" onClick={() => onMarkReady(item)}>Mark ready</button>}
       {isReady && <button title="Review ready request" onClick={() => onVerify(item)}>Review</button>}

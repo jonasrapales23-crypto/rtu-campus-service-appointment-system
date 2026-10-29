@@ -35,7 +35,9 @@ export default function useDailySlots({ template, rows, selectedDate }) {
   });
 
   const slotsFor = useCallback((date) => {
-    const base = overrides[date] ?? template.map(({ time, capacity, closed }) => ({ time, capacity, closed }));
+    // Offices run Mon–Fri only, so dates without saved edits default to closed on Sat/Sun.
+    const weekend = [0, 6].includes(new Date(`${date}T00:00:00`).getDay());
+    const base = overrides[date] ?? template.map(({ time, capacity, closed }) => ({ time, capacity, closed: closed || weekend }));
     const counts = countBookings(rows, date);
     return base.map((s) => ({
       ...s,

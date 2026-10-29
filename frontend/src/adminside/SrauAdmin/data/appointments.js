@@ -15,13 +15,13 @@ export const initialAppointments = [
   { id: "10-26-R-012-CER-482912", short: "…-012-CER", student: "Ben Cruz", number: "2020-00213", program: "BSBA", service: "Certificates", date: "2026-10-26", time: "8:30 AM", type: "Booked", status: "Done" },
 ];
 export const initialServices = [
-  { name: "Transcript of Records", available: true, fee: "₱ ___", processing: "5 working days", pickup: true, eligibility: "All students", requirements: "Valid ID · Other documents set by the office", notes: "Bring your control number and valid ID." },
-  { name: "Certificates", available: true, fee: "₱ ___", processing: "Set by office", pickup: true, eligibility: "All students", requirements: "Valid ID", notes: "Please check requirements before visiting." },
-  { name: "CTC / Authentication", available: true, fee: "₱ ___", processing: "Set by office", pickup: true, eligibility: "All students", requirements: "Valid ID · Original document", notes: "Bring the original document for checking." },
-  { name: "Diploma", available: false, fee: "₱ ___", processing: "Set by office", pickup: true, eligibility: "Graduates", requirements: "Valid ID · Clearance", notes: "For graduates only." },
+  { name: "Transcript of Records", available: true, fee: "₱350 (college) · +₱30 doc stamp each", processing: "7 working days", pickup: true, eligibility: "All students", requirements: "Valid ID · Accomplished clearance · Official receipt", notes: "Bring your control number and valid ID." },
+  { name: "Certificates", available: true, fee: "₱150 (Completion ₱200)", processing: "3–7 working days", pickup: true, eligibility: "All students", requirements: "Valid ID", notes: "Please check requirements before visiting." },
+  { name: "CTC / Authentication", available: true, fee: "₱150", processing: "Set by office", pickup: true, eligibility: "All students", requirements: "Valid ID · Original document", notes: "Bring the original document for checking." },
+  { name: "Diploma", available: true, fee: "₱500", processing: "Set by office", pickup: true, eligibility: "All students", requirements: "Valid ID · Accomplished clearance", notes: "Bring your control number and valid ID." },
 ];
 export const navItems = ["Dashboard", "Queue", "Requests", "Slots", "Services", "Reports"];
-export const times = ["8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "1:00 PM", "1:30 PM"];
+export const times = ["8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM", "4:00 PM", "4:30 PM"];
 
 // These statuses mean staff have finished handling the appointment/request.
 // They stay in the complete appointment history but not in active work lists.

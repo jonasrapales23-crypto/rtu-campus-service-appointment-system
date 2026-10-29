@@ -18,3 +18,5 @@
 .misu-report-students>button>span:last-child{font-size:11px;color:#2442c5;white-space:nowrap}
 .misu-filters select{min-width:145px}
 @media(max-width:560px){.misu-record-title{align-items:flex-start;flex-direction:column}.misu-row-actions{flex-direction:column;align-items:stretch}.misu-report-students>button{align-items:flex-start;flex-direction:column}}
+
+.misu-badge.cancelled{background:#fee2e2;color:#b4232c}
