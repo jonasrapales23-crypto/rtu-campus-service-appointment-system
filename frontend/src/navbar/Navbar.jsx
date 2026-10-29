@@ -26,15 +26,15 @@ export default function Navbar({ activePage = "", accountType = "student", admin
     window.location.href = "/";
   }
 
-  if (["srau-admin", "misu-admin", "hsu-admin"].includes(accountType)) {
-    const adminLinks = accountType === "misu-admin" ? ["Dashboard", "Queue", "Requests", "Records", "Services", "Reports"] : accountType === "hsu-admin" ? ["Dashboard", "Queue", "Bookings", "Slots", "Services", "Reports"] : ["Dashboard", "Queue", "Requests", "Slots", "Services", "Reports"];
+  if (["srau-admin", "misu-admin", "hsu-admin", "bau-admin"].includes(accountType)) {
+    const adminLinks = accountType === "misu-admin" ? ["Dashboard", "Queue", "Requests", "Records", "Services", "Reports"] : accountType === "hsu-admin" ? ["Dashboard", "Queue", "Bookings", "Slots", "Services", "Reports"] : accountType === "bau-admin" ? ["Dashboard", "Queue", "Requests", "Slots", "Products", "Reports"] : ["Dashboard", "Queue", "Requests", "Slots", "Services", "Reports"];
     return (
       <header className="navbar shared-admin-navbar">
         <img className="navbar-logo" src="/rtu-logo.png" alt="Rizal Technological University logo" />
         <a className="brand" href="/home" aria-label="RTU-CCSAS home">
           <span className="brand-name">RTU-CCSAS</span>
         </a>
-        <nav className="nav-links admin-nav-links" aria-label={`${accountType === "misu-admin" ? "MISU" : accountType === "hsu-admin" ? "HSU" : "SRAU"} admin navigation`}>
+        <nav className="nav-links admin-nav-links" aria-label={`${accountType === "misu-admin" ? "MISU" : accountType === "hsu-admin" ? "HSU" : accountType === "bau-admin" ? "BAU" : "SRAU"} admin navigation`}>
           {adminLinks.map((item) => (
             <button key={item} type="button" className={adminSection === item ? "active-nav" : ""}
               aria-current={adminSection === item ? "page" : undefined}
@@ -78,6 +78,7 @@ export default function Navbar({ activePage = "", accountType = "student", admin
             <a href="/srau-admin" role="menuitem" onClick={() => setPermissionOpen(false)}>SRAU admin</a>
             <a href="/misu-admin" role="menuitem" onClick={() => setPermissionOpen(false)}>MISU admin</a>
             <a href="/hsu-admin" role="menuitem" onClick={() => setPermissionOpen(false)}>HSU admin</a>
+            <a href="/bau-admin" role="menuitem" onClick={() => setPermissionOpen(false)}>BAU admin</a>
           </div>}
         </div>
         <button className="logout-button" type="button" onClick={handleLogout}>Logout</button>
