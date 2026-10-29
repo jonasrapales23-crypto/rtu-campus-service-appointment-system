@@ -87,7 +87,7 @@ export default function Navbar({ activePage = "", accountType = "student", admin
         <a href="/home">Home</a><a href="/appointments">My Appointments</a><a href="/appointments?tab=history">History</a>
         <button type="button" className="drawer-permission-toggle" aria-expanded={permissionOpen}
           onClick={() => setPermissionOpen((open) => !open)}>Change acc perm ▾</button>
-        {permissionOpen && <><a className="drawer-permission-option" href="/srau-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>SRAU admin</a><a className="drawer-permission-option" href="/misu-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>MISU admin</a><a className="drawer-permission-option" href="/hsu-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>HSU admin</a></>}
+        {permissionOpen && <><a className="drawer-permission-option" href="/srau-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>SRAU admin</a><a className="drawer-permission-option" href="/misu-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>MISU admin</a><a className="drawer-permission-option" href="/hsu-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>HSU admin</a><a className="drawer-permission-option" href="/bau-admin" role="menuitem" onClick={() => { setPermissionOpen(false); setMenuOpen(false); }}>BAU admin</a></>}
         <button type="button" onClick={handleLogout}>Logout</button>
       </nav>}
     </header>
