@@ -10,7 +10,7 @@ import {
   availableSlots,
   createAppointment,
 } from "../../services/appointments.js";
-import { demoStudent } from "../../data/student.js";
+import { currentStudent } from "../../data/student.js";
 import { checkUpload } from "../../utils/uploadCheck.js";
 import { formatDate, parseDateKey } from "../../utils/dates.js";
 import "../../styles/Login.css";
@@ -120,7 +120,7 @@ export default function OfficeBookingPage({ config }) {
         date: schedule.selectedDate,
         time: schedule.selectedTime,
         receiverName: someoneElse ? claimant.receiverName.trim() : "",
-        student: demoStudent,
+        student: currentStudent,
       });
 
       window.location.href = `/ticket?id=${encodeURIComponent(
@@ -266,7 +266,7 @@ export default function OfficeBookingPage({ config }) {
           <p>
             {service} · {config.code}
             <br />
-            {demoStudent.name} · {demoStudent.program}
+            {currentStudent.name} · {currentStudent.program}
             <br />
             {isPickup ? "Pickup" : "Appointment"}:{" "}
             {formatDate(parseDateKey(schedule.selectedDate))} ·{" "}

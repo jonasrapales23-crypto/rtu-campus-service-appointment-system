@@ -22,7 +22,7 @@ export const srauConfig = {
   // What the student must upload, and whether someone else may claim.
   requirements: { validId: true, requiredDocument: true },
   claimant: true,
-  // Demo data until the backend provides real availability per date.
+  // Default availability values for the booking interface.
   timeSlots: [
     { time: "8:00 AM", left: 12 },
     { time: "8:30 AM", left: 0 },

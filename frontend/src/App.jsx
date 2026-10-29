@@ -11,6 +11,7 @@ import Ticket from "./pages/Ticket.jsx";
 import Search from "./pages/Search.jsx";
 import SrauAdmin from "./adminside/SrauAdmin/SrauAdmin.jsx";
 import MisuAdmin from "./adminside/MisuAdmin/MisuAdmin.jsx";
+import HsuAdmin from "./adminside/HsuAdmin/HsuAdmin.jsx";
 
 export default function App() {
   const path = window.location.pathname;
@@ -21,6 +22,10 @@ export default function App() {
 
   if (path === "/misu-admin") {
     return <MisuAdmin />;
+  }
+
+  if (path === "/hsu-admin") {
+    return <HsuAdmin />;
   }
 
   if (path === "/register") {
