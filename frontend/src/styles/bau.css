@@ -1,0 +1,855 @@
+/* ========================================
+   MAIN PAGE AND HEADING
+======================================== */
+
+.bau-main {
+    box-sizing: border-box;
+    width: 100%;
+    flex: 1;
+    padding: 16px 18px 28px;
+    background: #ffffff;
+    color: #102b57;
+    font-size: 12px;
+}
+
+.bau-page-heading {
+    margin-bottom: 20px;
+}
+
+.bau-eyebrow {
+    margin: 0 0 5px;
+    color: #52617a;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+}
+
+.bau-page-heading h1 {
+    margin: 0 0 5px;
+    color: #102b57;
+    font-size: 20px;
+    line-height: 1.35;
+    font-weight: 700;
+}
+
+.bau-page-heading > p:last-child {
+    margin: 0;
+    color: #52617a;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+/* ========================================
+   BACK BUTTON AND STEP HEADING
+======================================== */
+
+.bau-step-heading {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.bau-step-heading h2 {
+    margin: 0;
+    color: #102b57;
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.bau-back-button {
+    width: 25px;
+    height: 25px;
+    padding: 0;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: #52617a;
+    font-size: 23px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.bau-back-button:hover {
+    background: #e8ecf5;
+    color: #2442c5;
+}
+
+.bau-back-button:focus-visible {
+    outline: 2px solid #2442c5;
+    outline-offset: 2px;
+}
+
+/* ========================================
+   CATEGORY PANEL
+======================================== */
+
+.bau-category-panel {
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 15px;
+    border: 1px solid #d0d9eb;
+    border-radius: 9px;
+    background: #ffffff;
+}
+
+.bau-section-heading {
+    margin-bottom: 14px;
+}
+
+.bau-section-heading h2 {
+    margin: 0 0 5px;
+    color: #102b57;
+    font-size: 13px;
+    line-height: 1.45;
+    font-weight: 700;
+}
+
+.bau-section-heading p {
+    margin: 0;
+    color: #52617a;
+    font-size: 11px;
+    line-height: 1.5;
+}
+/* ========================================
+   PRODUCT OR SERVICE DROPDOWN
+======================================== */
+
+.bau-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.bau-field > span {
+  color: #102b57;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.bau-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 32px;
+  padding: 7px 10px;
+  border: 1px solid #d0d9eb;
+  border-radius: 7px;
+  outline: none;
+  background: #e8ecf5;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.bau-field select:focus {
+  border-color: #2442e8;
+  outline: 1px solid #2442e8;
+  outline-offset: 0;
+}
+
+/* ========================================
+   GENERAL PRODUCT PANEL
+======================================== */
+
+.bau-product-panel {
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid #d0d9eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+/* ========================================
+   BOOK DETAILS
+======================================== */
+
+.bau-book-details {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid #d0d9eb;
+  border-radius: 7px;
+  background: #e8ecf5;
+}
+
+.bau-detail-label {
+  display: block;
+  margin-bottom: 7px;
+  color: #52617a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.bau-book-details h3 {
+  margin: 0 0 12px;
+  color: #102b57;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.bau-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #d0d9eb;
+  font-size: 11px;
+}
+
+.bau-detail-row > span {
+  color: #52617a;
+}
+
+.bau-detail-row strong {
+  color: #102b57;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.bau-price {
+  color: #102b57;
+  font-size: 12px;
+}
+
+/* ========================================
+   GENDER SELECTION
+======================================== */
+
+.bau-gender-section {
+  margin-top: 16px;
+  margin-bottom: 14px;
+}
+
+.bau-gender-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 8px;
+}
+
+.bau-gender-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 88px;
+  min-height: 32px;
+  padding: 6px 10px;
+  border: 1px solid #d0d9eb;
+  border-radius: 7px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.bau-gender-button:hover {
+  border-color: #2442e8;
+}
+
+/* Same selected outline as the SRAU service buttons */
+.bau-gender-button.active {
+  border: 1.5px solid #2442e8;
+  background: #e8ecf5;
+  box-shadow: 0 0 0 1px rgba(36, 66, 232, 0.05);
+}
+
+.bau-gender-button:focus-visible {
+  outline: 2px solid #2442e8;
+  outline-offset: 2px;
+}
+
+.bau-radio-dot {
+  box-sizing: border-box;
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+  border: 1px solid #71809a;
+  border-radius: 50%;
+  background: #ffffff;
+}
+
+.bau-gender-button.active .bau-radio-dot {
+  border: 4px solid #2442e8;
+}
+
+/* ========================================
+   SCHOOL UNIFORM AND PE UNIFORM PANELS
+======================================== */
+
+.bau-uniform-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 10px;
+  margin: 14px 0;
+}
+
+.bau-uniform-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #d0d9eb;
+  border-radius: 7px;
+  background: #e8ecf5;
+}
+
+.bau-uniform-panel-heading {
+  margin-bottom: 12px;
+}
+
+.bau-uniform-panel-heading h2 {
+  margin: 0 0 5px;
+  color: #102b57;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.bau-uniform-panel-heading p {
+  margin: 0;
+  color: #52617a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* ========================================
+   INDIVIDUAL CLOTHING CARDS
+======================================== */
+
+.bau-clothing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 8px;
+}
+
+.bau-clothing-card {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid #d0d9eb;
+  border-radius: 6px;
+  background: #ffffff;
+  transition: border-color 0.15s ease;
+}
+
+/* Highlight a clothing card when one of its sizes is selected */
+.bau-clothing-card-selected {
+  border: 1.5px solid #2442e8;
+  background: #e8ecf5;
+}
+
+.bau-clothing-title {
+  margin: 0;
+  color: #102b57;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.bau-size-label {
+  margin: 7px 0;
+  color: #52617a;
+  font-size: 10px;
+}
+
+/* ========================================
+   CLICKABLE SIZE BUTTONS
+======================================== */
+
+.bau-size-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.bau-size-button {
+  box-sizing: border-box;
+  min-width: 27px;
+  min-height: 25px;
+  padding: 4px 5px;
+  border: 1px solid #d0d9eb;
+  border-radius: 4px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+  transition: border-color 0.15s ease;
+}
+
+.bau-size-button:hover {
+  border-color: #2442e8;
+}
+
+/* Same blue and 1.5px outline as SRAU selected choices */
+.bau-size-button.active {
+  border: 1.5px solid #2442e8;
+  background: #e8ecf5;
+  color: #102b57;
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(36, 66, 232, 0.05);
+}
+
+.bau-size-button:focus-visible {
+  outline: 2px solid #2442e8;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   GRADUATION PICTURE AND SABLAY
+======================================== */
+
+.bau-info-panel {
+  text-align: left;
+}
+
+.bau-large-icon {
+  margin-bottom: 8px;
+  font-size: 28px;
+}
+
+.bau-info-panel h2 {
+  margin: 0 0 8px;
+  color: #102b57;
+  font-size: 14px;
+}
+
+.bau-info-panel p {
+  margin: 0;
+  color: #52617a;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+/* ========================================
+   CONFIRMATION BUTTON AND MESSAGE
+======================================== */
+
+.bau-action-section {
+  margin-top: 16px;
+  margin-bottom: 12px;
+}
+
+.bau-primary-button {
+  min-height: 32px;
+  padding: 8px 13px;
+  border: none;
+  border-radius: 6px;
+  background: #2442e8;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.bau-primary-button:hover {
+  background: #1b329a;
+}
+
+.bau-primary-button:focus-visible {
+  outline: 2px solid #2442e8;
+  outline-offset: 2px;
+}
+
+.bau-message {
+  margin: 10px 0 0;
+  padding: 9px 10px;
+  border: 1px solid #d0d9eb;
+  border-radius: 6px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-size: 11px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* ========================================
+   RESPONSIVE LAYOUT
+======================================== */
+
+@media (max-width: 700px) {
+  .bau-uniform-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 450px) {
+  .bau-main {
+    padding: 12px 10px 16px;
+  }
+
+  .bau-uniform-panel {
+    padding: 10px;
+  }
+
+  .bau-clothing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .bau-size-options {
+    gap: 5px;
+  }
+
+  .bau-size-button {
+    min-width: 30px;
+    min-height: 27px;
+  }
+}
+
+/* ========================================
+   BAU PICKUP CALENDAR 
+======================================== */
+
+.bau-pickup-section {
+  margin-top: 16px;
+}
+
+.bau-pickup-title {
+  margin: 0 0 8px;
+  color: #102b57;
+  font-size: 11px;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.bau-schedule {
+  display: grid;
+  grid-template-columns: 156px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+
+.bau-calendar {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 8px;
+  border-radius: 6px;
+  background: #e8ecf5;
+}
+
+.bau-calendar-header {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 8px;
+}
+
+.bau-calendar-header h3 {
+  margin: 0;
+  color: #102b57;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.bau-calendar-header button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #102b57;
+  font-size: 19px;
+  cursor: pointer;
+}
+
+.bau-calendar-header button:hover:not(:disabled) {
+  background: #d4ddef;
+}
+
+.bau-calendar-header button:disabled {
+  color: #b9c2d3;
+  cursor: not-allowed;
+}
+
+.bau-weekdays,
+.bau-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+}
+
+.bau-weekdays {
+  margin-bottom: 5px;
+  color: #71809a;
+  font-size: 9px;
+  font-style: italic;
+}
+
+.bau-calendar-days button {
+  min-width: 0;
+  height: 19px;
+  padding: 0;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #102b57;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.bau-calendar-days button:disabled {
+  color: #b9c2d3;
+  cursor: not-allowed;
+}
+
+.bau-calendar-days button.selected {
+  background: #2442c5;
+  color: #ffffff;
+}
+
+.bau-calendar-days button:not(:disabled):hover {
+  outline: 1px solid #2442c5;
+  outline-offset: -1px;
+}
+
+.bau-calendar-empty {
+  height: 19px;
+}
+
+.bau-time-panel {
+  min-width: 0;
+}
+
+.bau-selected-date {
+  min-height: 14px;
+  margin: 0 0 6px;
+  color: #52617a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.bau-time-slots {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.bau-time-slots button {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 23px;
+  padding: 4px 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.bau-time-slots button.selected {
+  background: #2442c5;
+  color: #ffffff;
+}
+
+.bau-time-slots button:disabled {
+  color: #a3a9b5;
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
+.bau-time-slots button:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}
+
+/* ========================================
+   GENERATED TICKET PAGE
+======================================== */
+
+.bau-ticket-main {
+  padding-top: 16px;
+}
+
+.bau-ticket-title {
+  margin: 0 0 10px;
+  color: #102b57;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.bau-ticket-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 250px;
+  padding: 18px 14px;
+  border: 1px dashed #2442c5;
+  border-radius: 9px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.bau-ticket-control-label {
+  margin: 0;
+  color: #102b57;
+  font-size: 10px;
+}
+
+.bau-ticket-control-number {
+  min-height: 20px;
+  margin: 8px 0;
+  color: #102b57;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.bau-ticket-details {
+  min-height: 95px;
+  margin: 12px 0;
+}
+
+.bau-ticket-card .bau-primary-button {
+  margin-top: 4px;
+}
+
+/* ========================================
+   RESPONSIVE CALENDAR
+======================================== */
+
+@media (max-width: 400px) {
+  .bau-schedule {
+    grid-template-columns: 1fr;
+  }
+
+  .bau-calendar {
+    width: 100%;
+  }
+
+  .bau-time-slots {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+/* ========================================
+   BAU CATEGORY SELECTION - HSU STYLE
+======================================== */
+
+.bau-category-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.bau-category-card {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 58px;
+  gap: 11px;
+  padding: 10px 12px;
+  border: 1px solid #e0e5ef;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #102b57;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.bau-category-card:hover {
+  border-color: #2442c5;
+  background: #f5f7fc;
+}
+
+.bau-category-card.active {
+  border: 1.5px solid #2442c5;
+  background: #f5f7fc;
+}
+
+.bau-category-card:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}
+
+.bau-category-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  background: #e8ecf5;
+  font-size: 17px;
+}
+
+.bau-category-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+
+.bau-category-copy strong {
+  color: #102b57;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.bau-category-copy small {
+  color: #52617a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.bau-category-arrow {
+  flex-shrink: 0;
+  color: #71809a;
+  font-size: 17px;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.bau-category-card:hover .bau-category-arrow,
+.bau-category-card.active .bau-category-arrow {
+  color: #2442c5;
+  transform: translateX(2px);
+}
+
+@media (min-width: 600px) {
+  .bau-category-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
+}
+@media (max-width: 520px) {
+    .bau-main {
+        padding: 13px 10px 22px;
+    }
+
+    .bau-category-panel {
+        padding: 12px;
+    }
+}

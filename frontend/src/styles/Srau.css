@@ -358,3 +358,32 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+.srau-service-item {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.srau-service-item .srau-service-option {
+  width: 100%;
+}
+
+.srau-tor-level {
+  width: 100%;
+  min-height: 30px;
+  padding: 5px 7px;
+  border: 1px solid #cbd4e6;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #102b57;
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.srau-tor-level:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}

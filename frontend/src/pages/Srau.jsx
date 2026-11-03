@@ -96,6 +96,7 @@ function UploadBox({ title, note, file, onChange }) {
 
 export default function Srau() {
   const [service, setService] = useState("Transcript of Records");
+  const [torLevel, setTorLevel] = useState("College");
   const [validId, setValidId] = useState(null);
   const [requiredDocument, setRequiredDocument] = useState(null);
   const [claimant, setClaimant] = useState("");
@@ -237,27 +238,65 @@ export default function Srau() {
         <section className="srau-section">
           <h2>1 · Choose a service</h2>
 
-          <div className="srau-service-grid">
-            {services.map((item) => (
-              <button
-                key={item}
-                type="button"
-                className={`srau-service-option ${
-                  service === item ? "selected" : ""
-                }`}
-                onClick={() => setService(item)}
-                aria-pressed={service === item}
-              >
-                {item}
-              </button>
-            ))}
-          </div>
+          
+<div className="srau-service-grid">
+  {services.map((item) => (
+    <div className="srau-service-item" key={item}>
+      <button
+        type="button"
+        className={`srau-service-option ${
+          service === item ? "selected" : ""
+        }`}
+        onClick={() => setService(item)}
+        aria-pressed={service === item}
+      >
+        {item}
+        {item === "Transcript of Records" && " ▾"}
+      </button>
 
-          <div className="srau-fee-note">
-            <strong>Fee:</strong> ₱ — (paid at the counter) ·{" "}
-            <strong>Processing:</strong> 5 working days. The office
-            prepares your document before you arrive.
-          </div>
+      {item === "Transcript of Records" &&
+        service === "Transcript of Records" && (
+          <select
+            className="srau-tor-level"
+            value={torLevel}
+            onChange={(event) => setTorLevel(event.target.value)}
+            aria-label="Transcript of Records academic level"
+          >
+            <option value="College">College</option>
+            <option value="Master's">Master's</option>
+            <option value="Doctor's">Doctor's</option>
+          </select>
+        )}
+    </div>
+  ))}
+</div>
+
+<div className="srau-fee-note">
+  <strong>Fee:</strong>{" "}
+  {service === "Transcript of Records"
+    ? `₱${
+        torLevel === "College"
+          ? 350
+          : torLevel === "Master's"
+          ? 500
+          : 750
+      } + ₱30 document stamp = ₱${
+        torLevel === "College"
+          ? 380
+          : torLevel === "Master's"
+          ? 530
+          : 780
+      }`
+    : service === "CTC / Authentication"
+    ? "₱150"
+    : service === "Certificates"
+    ? "₱150"
+    : "₱500"}
+  {" · "}
+  <strong>Processing:</strong> 5 working days. The office
+  prepares your document before you arrive.
+</div>
+
         </section>
 
         {/* 2. Upload requirements */}
@@ -484,4 +523,3 @@ export default function Srau() {
     </div>
   );
 }
-

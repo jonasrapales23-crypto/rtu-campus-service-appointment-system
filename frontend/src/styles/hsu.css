@@ -1,0 +1,810 @@
+
+.hsu-main {
+  box-sizing: border-box;
+  width: 100%;
+  flex: 1;
+  padding: 16px 18px 28px;
+  background: #ffffff;
+  color: #102b57;
+  font-size: 12px;
+}
+
+.hsu-page-heading {
+  margin-bottom: 20px;
+}
+
+.hsu-eyebrow {
+  margin: 0 0 5px;
+  color: #52617a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+}
+
+.hsu-page-heading h1 {
+  margin: 0 0 5px;
+  color: #102b57;
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.hsu-page-heading > p:last-child {
+  margin: 0;
+  color: #52617a;
+  font-size: 12px;
+}
+
+.hsu-step-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.hsu-step-heading h2 {
+  margin: 0;
+  color: #102b57;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.hsu-back-button {
+  width: 25px;
+  height: 25px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #52617a;
+  font-size: 23px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.hsu-back-button:hover {
+  background: #e8ecf5;
+  color: #2442c5;
+}
+
+.hsu-selection-layout,
+.hsu-scheduling-layout,
+.hsu-details-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(220px, 0.8fr);
+  align-items: start;
+  gap: 14px;
+}
+
+.hsu-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.hsu-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: 15px;
+  border: 1px solid #d0d9eb;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.hsu-panel-heading {
+  margin-bottom: 14px;
+}
+
+.hsu-panel-heading h2 {
+  margin: 0 0 5px;
+  color: #102b57;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.hsu-panel-heading p {
+  margin: 0;
+  color: #52617a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.hsu-service-category {
+  margin-top: 14px;
+}
+
+.hsu-service-category > h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 7px;
+  color: #71809a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.hsu-service-option {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 59px;
+  margin-bottom: 7px;
+  padding: 10px;
+  border: 1px solid #e0e5ef;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #102b57;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.hsu-service-option:hover {
+  border-color: #2442c5;
+  background: #f7f9ff;
+}
+
+.hsu-service-option:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}
+
+.hsu-service-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  border-radius: 7px;
+  background: #e8ecf5;
+  font-size: 17px;
+}
+
+.hsu-service-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+}
+
+.hsu-service-copy strong {
+  color: #102b57;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.hsu-service-copy small {
+  color: #52617a;
+  font-size: 10px;
+}
+
+.hsu-service-arrow {
+  color: #71809a;
+  font-size: 22px;
+}
+
+.hsu-profile-card {
+  box-sizing: border-box;
+  padding: 17px 12px;
+  border: 1px solid #e0e5ef;
+  border-radius: 9px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.hsu-logo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  margin: 0 auto 10px;
+  border: 1px solid #a8dce9;
+  border-radius: 50%;
+  background: #d9f1f6;
+  color: #102b57;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.hsu-profile-card h3 {
+  margin: 0 0 3px;
+  color: #102b57;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.hsu-profile-card h4 {
+  margin: 0;
+  color: #102b57;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.hsu-rating {
+  margin: 7px 0 5px;
+  color: #102b57;
+  font-size: 10px;
+}
+
+.hsu-rating span {
+  color: #71809a;
+}
+
+.hsu-address {
+  margin: 0;
+  color: #71809a;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.hsu-summary-card {
+  box-sizing: border-box;
+  padding: 13px;
+  border: 1px solid #e0e5ef;
+  border-radius: 9px;
+  background: #ffffff;
+}
+
+.hsu-summary-card > h3 {
+  margin: 0 0 12px;
+  color: #102b57;
+  font-size: 12px;
+}
+
+.hsu-summary-service {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hsu-summary-service strong {
+  color: #102b57;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.hsu-summary-service p {
+  margin: 4px 0 0;
+  color: #71809a;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.hsu-summary-date {
+  position: relative;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #e0e5ef;
+}
+
+.hsu-summary-date p {
+  margin: 0 0 4px;
+  color: #52617a;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.hsu-summary-date strong {
+  color: #102b57;
+  font-size: 10px;
+}
+
+.hsu-summary-date button {
+  margin-left: 8px;
+  padding: 3px 7px;
+  border: 1px solid #d0d9eb;
+  border-radius: 5px;
+  background: #e8ecf5;
+  color: #2442c5;
+  font-family: inherit;
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.hsu-schedule-content {
+  display: grid;
+  grid-template-columns: minmax(145px, 0.85fr) minmax(0, 1.15fr);
+  align-items: start;
+  gap: 12px;
+}
+
+.hsu-calendar {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 9px;
+  border-radius: 7px;
+  background: #e8ecf5;
+}
+
+.hsu-calendar-header {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 24px;
+  align-items: center;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+
+.hsu-calendar-header h3 {
+  margin: 0;
+  color: #102b57;
+  text-align: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hsu-calendar-header button {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #102b57;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+.hsu-calendar-header button:hover:not(:disabled) {
+  background: #d4ddef;
+}
+
+.hsu-calendar-header button:disabled {
+  color: #b9c2d3;
+  cursor: not-allowed;
+}
+
+.hsu-weekdays,
+.hsu-calendar-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  text-align: center;
+}
+
+.hsu-weekdays {
+  margin-bottom: 5px;
+  color: #71809a;
+  font-size: 9px;
+  font-style: italic;
+}
+
+.hsu-calendar-days button,
+.hsu-calendar-days span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  height: 25px;
+}
+
+.hsu-calendar-days button {
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.hsu-calendar-days button:disabled {
+  color: #b9c2d3;
+  cursor: not-allowed;
+}
+
+.hsu-calendar-days button.selected {
+  background: #2442c5;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.hsu-calendar-days button:not(:disabled):hover {
+  outline: 1px solid #2442c5;
+}
+
+.hsu-timezone {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 12px;
+}
+
+.hsu-timezone span {
+  color: #52617a;
+  font-size: 10px;
+}
+
+.hsu-timezone select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 30px;
+  padding: 6px 8px;
+  border: 1px solid #d0d9eb;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #52617a;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.hsu-time-column {
+  min-width: 0;
+}
+
+.hsu-time-column > h3 {
+  min-height: 16px;
+  margin: 0 0 8px;
+  color: #52617a;
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.hsu-time-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  max-height: 430px;
+  overflow-y: auto;
+  padding-right: 3px;
+}
+
+.hsu-time-grid button {
+  box-sizing: border-box;
+  min-width: 0;
+  min-height: 27px;
+  padding: 5px 3px;
+  border: 1px solid #d0d9eb;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.hsu-time-grid button:hover {
+  border-color: #2442c5;
+  background: #f1f4ff;
+}
+
+.hsu-time-grid button.selected {
+  border-color: #2442c5;
+  background: #2442c5;
+  color: #ffffff;
+}
+
+.hsu-details-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.hsu-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hsu-form-field > span {
+  color: #102b57;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.hsu-form-field input,
+.hsu-form-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 33px;
+  padding: 8px 10px;
+  border: 1px solid #d0d9eb;
+  border-radius: 6px;
+  outline: none;
+  background: #e8ecf5;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.hsu-form-field textarea {
+  min-height: 75px;
+  resize: vertical;
+}
+
+.hsu-form-field input:focus,
+.hsu-form-field textarea:focus {
+  border-color: #2442c5;
+  outline: 1px solid #2442c5;
+}
+
+.hsu-phone-input {
+  display: grid;
+  grid-template-columns: 55px minmax(0, 1fr);
+  gap: 7px;
+}
+
+.hsu-phone-input > span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 33px;
+  border: 1px solid #d0d9eb;
+  border-radius: 6px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-size: 10px;
+}
+
+.hsu-policy-box {
+  margin-top: 5px;
+  padding: 12px;
+  border-radius: 6px;
+  background: #f5f6fa;
+}
+
+.hsu-policy-box h3 {
+  margin: 0 0 4px;
+  color: #102b57;
+  font-size: 10px;
+}
+
+.hsu-policy-box p {
+  margin: 0 0 11px;
+  color: #52617a;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.hsu-policy-box p:last-child {
+  margin-bottom: 0;
+}
+
+.hsu-primary-button {
+  min-height: 34px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #2442c5;
+  color: #ffffff;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.hsu-primary-button:hover {
+  background: #1b329a;
+}
+
+.hsu-primary-button:focus-visible,
+.hsu-secondary-button:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}
+
+.hsu-secondary-button {
+  min-height: 34px;
+  padding: 8px 14px;
+  border: 1px solid #d0d9eb;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.hsu-ticket-page {
+  max-width: 900px;
+  margin: 0 auto;
+  padding-top: 5px;
+}
+
+.hsu-ticket-page > h1 {
+  margin: 0 0 10px;
+  color: #102b57;
+  font-size: 20px;
+}
+
+.hsu-ticket-card {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 285px;
+  padding: 22px 16px;
+  border: 1px dashed #2442c5;
+  border-radius: 9px;
+  background: #ffffff;
+  text-align: center;
+}
+
+.hsu-ticket-label {
+  margin: 0;
+  color: #102b57;
+  font-size: 11px;
+}
+
+.hsu-ticket-card > h2 {
+  margin: 8px 0 13px;
+  color: #102b57;
+  font-size: 21px;
+  overflow-wrap: anywhere;
+}
+
+.hsu-ticket-details {
+  min-height: 100px;
+  color: #102b57;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.hsu-ticket-details p {
+  margin: 3px 0;
+}
+
+.hsu-ticket-note {
+  margin: 12px 0;
+  padding: 10px;
+  border-radius: 6px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.hsu-ticket-format {
+  margin: 10px 0 15px;
+  color: #71809a;
+  font-size: 10px;
+}
+
+.hsu-ticket-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hsu-booking-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+}
+
+.hsu-booking-form > .hsu-panel {
+  width: 100%;
+}
+
+.hsu-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hsu-comments-field {
+  grid-column: 1 / -1;
+}
+
+.hsu-booking-form .hsu-schedule-panel {
+  margin: 0;
+}
+
+.hsu-booking-form .hsu-schedule-content {
+  grid-template-columns: minmax(180px, 0.75fr) minmax(0, 1.5fr);
+  gap: 16px;
+}
+
+.hsu-booking-form .hsu-time-grid {
+  max-height: 430px;
+}
+
+.hsu-selection-hint {
+  margin: 9px 0 0;
+  color: #71809a;
+  font-size: 10px;
+}
+
+.hsu-booking-submit {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+
+.hsu-booking-submit .hsu-primary-button {
+  min-width: 125px;
+}
+
+@media (max-width: 760px) {
+  .hsu-selection-layout,
+  .hsu-scheduling-layout,
+  .hsu-details-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .hsu-sidebar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .hsu-profile-card {
+    height: 100%;
+  }
+}
+
+@media (max-width: 650px) {
+  .hsu-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .hsu-comments-field {
+    grid-column: auto;
+  }
+
+  .hsu-booking-form .hsu-schedule-content {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .hsu-main {
+    padding: 13px 10px 22px;
+  }
+
+  .hsu-schedule-content {
+    grid-template-columns: 1fr;
+  }
+
+  .hsu-calendar {
+    max-width: 100%;
+  }
+
+  .hsu-time-grid {
+    max-height: 350px;
+  }
+
+  .hsu-sidebar {
+    grid-template-columns: 1fr;
+  }
+
+  .hsu-panel {
+    padding: 12px;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .site-shell > nav,
+  .hsu-page-heading,
+  .hsu-ticket-actions {
+    display: none !important;
+  }
+
+  .hsu-main {
+    padding: 0;
+  }
+
+  .hsu-ticket-page {
+    max-width: 100%;
+  }
+
+  .hsu-ticket-card {
+    border: 1px dashed #2442c5;
+    break-inside: avoid;
+  }
+}

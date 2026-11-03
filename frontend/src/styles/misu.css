@@ -1,0 +1,94 @@
+
+/* ========================================
+   MISU ADDITIONAL STYLES
+   Main design is reused from hsu.css
+======================================== */
+
+.misu-main {
+  color: #102b57;
+}
+
+/* Request type dropdown */
+
+.misu-extra-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 16px;
+}
+
+.misu-extra-field label,
+.misu-upload-field > label {
+  color: #102b57;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.misu-extra-field select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 40px;
+  padding: 9px 12px;
+  border: 1px solid #d0d9eb;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #102b57;
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.misu-extra-field select:focus,
+.misu-upload-field input:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}
+
+/* Requirement note */
+
+.misu-requirement-note {
+  margin: 2px 0 0;
+  color: #52617a;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+/* File upload */
+
+.misu-upload-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.misu-upload-field input[type="file"] {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 10px;
+  border: 1px dashed #aebbd3;
+  border-radius: 7px;
+  background: #f7f9ff;
+  color: #52617a;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.misu-upload-field small {
+  color: #71809a;
+  font-size: 10px;
+}
+
+.misu-file-name {
+  margin: 0;
+  color: #2442c5;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+/* Responsive layout */
+
+@media (max-width: 520px) {
+  .misu-upload-field input[type="file"] {
+    font-size: 10px;
+  }
+}
