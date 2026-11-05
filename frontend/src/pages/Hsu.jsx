@@ -469,23 +469,14 @@ export default function Hsu() {
 
                 <div className="hsu-schedule-content">
                   <div className="hsu-calendar-column">
-                    <Calendar
-                      selectedDate={selectedDate}
-                      onSelectDate={(date) => {
-                        setSelectedDate(date);
-                        setSelectedTime("");
-                      }}
-                    />
-
-                    <label className="hsu-timezone">
-                      <span>Time zone</span>
-                      <select defaultValue="Asia/Manila" disabled>
-                        <option value="Asia/Manila">
-                          Philippines - Manila
-                        </option>
-                      </select>
-                    </label>
-                  </div>
+  <Calendar
+    selectedDate={selectedDate}
+    onSelectDate={(date) => {
+      setSelectedDate(date);
+      setSelectedTime("");
+    }}
+  />
+</div>
 
                   <div className="hsu-time-column">
                     <h3>{selectedDateLabel}</h3>
