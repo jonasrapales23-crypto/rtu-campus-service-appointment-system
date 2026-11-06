@@ -1,0 +1,121 @@
+
+.bau-details-section {
+  margin: 22px 0;
+  padding: 22px;
+  background: #fff;
+  border: 1px solid #dce3ef;
+  border-radius: 12px;
+}
+
+.bau-details-section h2 {
+  color: #102b57;
+  margin-bottom: 8px;
+}
+
+.bau-details-section > p,
+.bau-uniform-panel > p {
+  color: #64748b;
+  margin-bottom: 18px;
+}
+
+.bau-details-field {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin-top: 16px;
+}
+
+.bau-details-field select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd4e6;
+  border-radius: 7px;
+  background: white;
+  color: #102b57;
+}
+
+.bau-book-details {
+  margin-top: 18px;
+  padding: 16px;
+  border: 1px solid #cbd4e6;
+  border-radius: 9px;
+  background: #f7f9ff;
+}
+
+.bau-book-details > span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.bau-book-details h3 {
+  margin: 8px 0 12px;
+  color: #102b57;
+}
+
+.bau-book-details p {
+  margin: 6px 0;
+}
+
+.bau-gender-options,
+.bau-size-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bau-gender-button,
+.bau-size-options button {
+  padding: 9px 13px;
+  border: 1px solid #cbd4e6;
+  border-radius: 7px;
+  background: white;
+  color: #102b57;
+  cursor: pointer;
+}
+
+.bau-gender-button.active,
+.bau-size-options button.active {
+  border-color: #2442c5;
+  background: #eaf0ff;
+  color: #2442c5;
+  font-weight: 700;
+}
+
+.bau-uniform-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.bau-uniform-panel {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #dce3ef;
+  border-radius: 9px;
+}
+
+.bau-uniform-panel h3 {
+  color: #102b57;
+}
+
+.bau-size-row {
+  margin-top: 18px;
+}
+
+.bau-size-row > strong {
+  display: block;
+  margin-bottom: 9px;
+}
+
+.bau-size-options button {
+  padding: 7px 9px;
+  font-size: 12px;
+}
+
+@media (max-width: 650px) {
+  .bau-uniform-grid {
+    grid-template-columns: 1fr;
+  }
+}

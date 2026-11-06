@@ -1,0 +1,282 @@
+/* Header background and layout */
+
+.navbar {
+  position: relative;
+  height: 99px;
+  min-height: 99px;
+  box-sizing: border-box;
+  padding: 15px 24px 15px 145px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-shrink: 0;
+
+  background-color: #5bc4e8;
+  background-image: url("/navbar-bg.png");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 100% 100%;
+}
+/* RTU logo */
+
+.navbar-logo {
+  position: absolute;
+  left: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+}
+
+/* RTU-CCSAS branding */
+
+.brand {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.brand-name {
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #102b57;
+  position: absolute;
+  left: 100px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* Service search bar */
+
+.service-search {
+  height: 46px;
+  width: 275px;
+  flex-shrink: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  gap: 8px;
+  background: white;
+  border: 1px solid #d5dbea;
+  border-radius: 9px;
+  position: absolute;
+  left: 240px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.service-search button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.service-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: #102b57;
+  font-size: 16px;
+}
+
+.service-search input::placeholder {
+  color: #52617a;
+  opacity: 1;
+}
+
+/* Navigation links */
+
+.nav-links {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+
+/* Highlight the current page in the navbar */
+
+
+
+/* Default navbar links */
+.nav-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  background: transparent;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+/* Blue outline appears when hovering */
+.nav-links a:hover {
+  border-color: #2442c5;
+  box-shadow: 0 2px 8px rgba(16, 43, 87, 0.12);
+}
+
+/* Highlight only the current page */
+.nav-links a.active-nav {
+  border-color: #2442c5;
+  background: rgba(255, 255, 255, 0.18)
+}
+
+/* Keep hover effect consistent on the active link */
+.nav-links a.active-nav:hover {
+  border-color: #2442c5;
+  background-color: #e8edff;
+}
+
+/* Keyboard navigation */
+.nav-links a:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 2px;
+}
+
+
+.logout-button {
+  padding: 15px 21px;
+  border: 0;
+  border-radius: 10px;
+  background: #101010;
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.logout-button:hover {
+  background: #303030;
+}
+
+
+
+/* Mobile menu: hamburger + drawer (phones only). */
+
+.nav-burger,
+.nav-drawer {
+  display: none;
+}
+
+@media (max-width: 650px) {
+  .navbar .nav-links {
+    display: none;
+  }
+
+  /* The search bar stops floating and takes its own full row under the
+     header image; the brand name stays centred on the image. */
+  .navbar .service-search {
+    position: static;
+    transform: none;
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .navbar .brand-name {
+    top: 49px;
+  }
+
+  .navbar .nav-burger {
+    display: block;
+    position: absolute;
+    top: 24px;
+    right: 16px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: #102b57;
+    font-size: 26px;
+    cursor: pointer;
+  }
+
+  .navbar .nav-drawer {
+    display: flex;
+    flex-direction: column;
+    order: 4;
+    width: 100%;
+    padding: 6px 16px;
+    box-sizing: border-box;
+    border-radius: 8px;
+    background: #2442c5;
+  }
+
+  .nav-drawer a,
+  .nav-drawer button {
+    padding: 13px 0;
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font: inherit;
+    font-size: 17px;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .nav-drawer a + a,
+  .nav-drawer a + button {
+    border-top: 1px solid rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* Frontend-only account permission switcher. */
+.navbar .account-permission{position:relative;display:flex;align-items:center}
+.navbar .account-permission-toggle{display:inline-flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid rgba(255,255,255,.4);border-radius:7px;background:rgba(255,255,255,.12);color:inherit;font:inherit;font-size:13px;white-space:nowrap;cursor:pointer}
+.navbar .account-permission-toggle:hover,.navbar .account-permission-toggle:focus-visible{background:rgba(255,255,255,.22);outline-offset:2px}
+.navbar .account-permission-menu{position:absolute;z-index:50;top:calc(100% + 9px);right:0;min-width:160px;padding:6px;border:1px solid #d5dbe8;border-radius:8px;background:#fff;box-shadow:0 10px 28px #102b5726}
+.navbar .account-permission-menu a{display:block;padding:10px 12px;border-radius:5px;color:#102b57;font-size:13px;text-decoration:none}
+.navbar .account-permission-menu a:hover,.navbar .account-permission-menu a:focus-visible{background:#e8ecf5;color:#2442c5;outline:none}
+.navbar .drawer-permission-toggle{display:block;width:100%;padding:13px 0;border:0;border-top:1px solid rgba(255,255,255,.25);background:transparent;color:#fff;font:inherit;font-size:17px;text-align:left;cursor:pointer}
+.navbar .drawer-permission-option{padding-left:16px!important;background:rgba(255,255,255,.1)}
+@media(max-width:650px){.navbar .account-permission{display:none}}
+
+/* Shared top navigation: admin uses the same RTU photo and blue-to-yellow gradient as students. */
+.shared-admin-navbar { height: 124px; min-height: 124px; padding-right: 24px; }
+.shared-admin-navbar .nav-links { gap: 8px; margin-left: auto; font-size: 14px; }
+.shared-admin-navbar .admin-nav-links button:not(.logout-button) {
+  display:inline-flex; align-items:center; justify-content:center; padding:8px 9px;
+  border:1px solid transparent; border-radius:8px; color:inherit; background:transparent;
+  font:inherit; font-size:13px; white-space:nowrap; cursor:pointer;
+}
+.shared-admin-navbar .admin-nav-links button:not(.logout-button):hover,
+.shared-admin-navbar .admin-nav-links button.active-nav {
+  border-color:rgba(36,66,197,.7); background:rgba(255,255,255,.22);
+}
+.shared-admin-navbar .logout-button { margin-left:4px; }
+@media(max-width:1050px) {
+ .shared-admin-navbar { padding-left:110px; }
+ .shared-admin-navbar .navbar-logo { left:18px; width:64px; height:64px; }
+ .shared-admin-navbar .brand-name { left:88px; font-size:17px; }
+ .shared-admin-navbar .admin-nav-links { gap:2px; }
+ .shared-admin-navbar .admin-nav-links button:not(.logout-button) { padding:7px 5px; font-size:11px; }
+}
+@media(max-width:650px) {
+ .shared-admin-navbar { height:auto; min-height:124px; flex-wrap:wrap; padding:15px 16px; }
+ .shared-admin-navbar .brand-name { left:90px; top:35px; }
+ .shared-admin-navbar .admin-nav-links { display:none; }
+ .shared-admin-navbar .nav-burger { display:block; position:absolute; top:24px; right:16px; width:42px;height:42px;padding:0;border:0;border-radius:8px;background:transparent;color:#102b57;font-size:26px;cursor:pointer; }
+ .shared-admin-navbar .nav-drawer { display:flex; flex-direction:column; width:100%; padding:6px 16px; background:#2442c5; border-radius:8px; }
+ .shared-admin-navbar .nav-drawer button { padding:13px 0; border:0; border-top:1px solid rgba(255,255,255,.25); background:transparent; color:#fff; font:inherit; font-size:15px; text-align:left; cursor:pointer; }
+}

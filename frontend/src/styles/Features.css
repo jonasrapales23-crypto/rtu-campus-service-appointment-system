@@ -1,0 +1,345 @@
+/* Student features that sit on top of the SRAU look:
+   upload checks, popups, ticket, appointments, search, verify email.
+   Same palette and compact sizes as Srau.css. */
+
+.srau-intro {
+  margin: 0 0 10px;
+  color: #52617a;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.srau-steps {
+  margin: 0;
+  padding-left: 18px;
+  line-height: 1.6;
+}
+
+.srau-note {
+  margin-top: 10px;
+}
+
+.srau-link {
+  display: inline-block;
+  margin-top: 10px;
+  color: #2442c5;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+/* Upload checks: green = accepted, red = not accepted. */
+
+.srau-upload-box.accepted {
+  border: 2px solid #1e8e3e;
+}
+
+.srau-upload-box.rejected {
+  border: 2px solid #c62828;
+}
+
+.upload-status {
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.upload-status.accepted {
+  color: #176534;
+}
+
+.upload-status.rejected {
+  color: #c62828;
+}
+
+.upload-reason {
+  font-size: 10px;
+  color: #c62828;
+}
+
+/* Buttons */
+
+.srau-generate-button:disabled {
+  background: #9aa6c9;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.srau-secondary-button {
+  margin-top: 2px;
+  padding: 7px 11px;
+  border: 1px solid #cbd4e6;
+  border-radius: 5px;
+  background: #ffffff;
+  color: #102b57;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.srau-secondary-button:hover {
+  background: #e8ecf5;
+}
+
+.srau-confirm-button {
+  background: #1e8e3e;
+}
+
+.srau-confirm-button:hover {
+  background: #176534;
+}
+
+.srau-danger-button {
+  background: #c62828;
+}
+
+.srau-danger-button:hover {
+  background: #a11a1a;
+}
+
+/* Popups */
+
+.srau-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(16, 43, 87, 0.45);
+}
+
+.srau-modal {
+  width: min(100%, 360px);
+  max-height: 90vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid #cbd4e6;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #102b57;
+  font-size: 11px;
+  text-align: center;
+}
+
+.srau-modal h2 {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+
+.srau-modal-body p {
+  margin: 0 0 8px;
+  line-height: 1.6;
+}
+
+.srau-modal-actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.srau-modal .srau-schedule {
+  text-align: left;
+}
+
+/* Ticket */
+
+.srau-ticket {
+  padding: 14px;
+  border: 2px dashed #2442c5;
+  border-radius: 10px;
+  background: #ffffff;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.srau-ticket-label {
+  color: #52617a;
+  font-size: 10px;
+}
+
+.srau-ticket-number {
+  margin: 4px 0 8px;
+  font-size: 20px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+
+.srau-ticket p {
+  margin: 0 0 8px;
+}
+
+/* My appointments / search results */
+
+.appt-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.appt-tabs button {
+  padding: 6px 12px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.appt-tabs button.selected {
+  background: #2442c5;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.appt-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px;
+  border-radius: 6px;
+  background: #e8ecf5;
+  line-height: 1.5;
+}
+
+.appt-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-wrap: anywhere;
+}
+
+.appt-tracker {
+  margin: 3px 0;
+  color: #52617a;
+  font-size: 10px;
+}
+
+.appt-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.appt-actions a {
+  color: #2442c5;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.appt-actions button {
+  padding: 3px 9px;
+  border: none;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.appt-reschedule {
+  background: #2442c5;
+}
+
+.appt-cancel {
+  background: #c62828;
+}
+
+.appt-badge {
+  flex-shrink: 0;
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.appt-badge.info {
+  background: #2442c5;
+}
+
+.appt-badge.ok {
+  background: #1e8e3e;
+}
+
+.appt-badge.bad {
+  background: #c62828;
+}
+
+.search-best {
+  margin-left: 6px;
+}
+
+.appt-heading {
+  margin: 14px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.srau-book-link {
+  flex-shrink: 0;
+  display: inline-block;
+  margin-top: 0;
+  text-decoration: none;
+}
+
+.srau-link-tile {
+  display: block;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* Verify email */
+
+.verify-text {
+  margin: 0 0 14px;
+  color: #102b57;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.verify-code {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.verify-code input {
+  width: 100%;
+  min-width: 0;
+  height: 46px;
+  padding: 0;
+  box-sizing: border-box;
+  border: 1px solid #cbd4e6;
+  border-radius: 6px;
+  background: #e8ecf5;
+  color: #102b57;
+  font-size: 20px;
+  text-align: center;
+}
+
+.verify-code input:focus-visible {
+  outline: 2px solid #2442c5;
+  outline-offset: 1px;
+}
+
+.verify-resend {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #2442c5;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
