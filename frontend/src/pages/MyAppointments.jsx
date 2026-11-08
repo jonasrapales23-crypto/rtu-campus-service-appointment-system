@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../navbar/Navbar.jsx";
 import Modal from "../components/Modal.jsx";
 import RescheduleModal from "../components/appointments/RescheduleModal.jsx";
@@ -40,22 +40,35 @@ export default function MyAppointments() {
       ? "history"
       : "upcoming"
   );
-  const [appointments, setAppointments] = useState(() => listAppointments());
+  
+  // FIX 1: Initialize as empty array so filter methods don't crash before network loading
+  const [appointments, setAppointments] = useState([]);
   const [cancelling, setCancelling] = useState(null);
   const [rescheduling, setRescheduling] = useState(null);
+
+  // FIX 2: Dynamic data refetch mechanism connecting live to MySQL rows
+  function refresh() {
+    listAppointments().then((data) => {
+      if (data) setAppointments(data);
+    });
+  }
+
+  // FIX 3: Fetch active data records immediately on page initialization
+  useEffect(() => {
+    refresh();
+  }, []);
 
   const upcoming = appointments.filter(isUpcoming);
   const history = appointments.filter((item) => !isUpcoming(item));
   const shown = tab === "upcoming" ? upcoming : history;
 
-  function refresh() {
-    setAppointments(listAppointments());
-  }
-
+  // FIX 4: Wait for database cancellation queries and append events to Audit Logs
   function confirmCancel() {
-    cancelAppointment(cancelling.id);
-    setCancelling(null);
-    refresh();
+    if (!cancelling) return;
+    cancelAppointment(cancelling.id).then(() => {
+      setCancelling(null);
+      refresh(); // Reload fresh rows from database layout
+    });
   }
 
   const reminder = upcoming.length > 0 && (
@@ -117,7 +130,7 @@ export default function MyAppointments() {
           return (
             <article className="appt-card" key={item.id}>
               <div className="appt-main">
-                <strong>{item.student.name}</strong>
+                <strong>{item.student?.name || "Student Visitor"}</strong>
                 <span>{item.controlNumber}</span>
                 <span>
                   {item.service} · {item.officeCode} ·{" "}
