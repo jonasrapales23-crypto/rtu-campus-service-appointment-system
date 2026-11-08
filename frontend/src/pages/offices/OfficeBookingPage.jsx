@@ -147,7 +147,7 @@ export default function OfficeBookingPage({ config }) {
     }
   }
 
-  function handleSubmit() {
+ async function handleSubmit() {
     try {
       const appointmentDetails =
         config.code !== "BAU"
@@ -163,14 +163,17 @@ export default function OfficeBookingPage({ config }) {
                 }
               : null;
 
-      const appointment = createAppointment({
+      // Force JavaScript to wait for the backend database response
+      const appointment = await createAppointment({
         config,
+        officeCode: config.code, 
         service,
         date: schedule.selectedDate,
         time: schedule.selectedTime,
         receiverName: someoneElse ? claimant.receiverName.trim() : "",
         student: currentStudent,
         details: appointmentDetails,
+        feeText: config.feeText
       });
 
       window.location.href = `/ticket?id=${encodeURIComponent(
