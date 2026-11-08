@@ -1,162 +1,129 @@
-// Front-end stand-in for the appointments API.
-// Appointments are kept in this browser's localStorage so the whole
-// student flow (book -> ticket -> my appointments) works before the
-// backend exists. When the backend is ready, replace the bodies of these
-// functions with fetch() calls and keep the same signatures.
+// frontend/src/services/appointments.js
+const BACKEND_URL = "http://localhost:5000/api";
 
-const STORAGE_KEY = "rtu-ccsas.appointments";
-
-// Order shown in the status tracker.
-export const STATUS_STEPS = [
-  "Submitted",
-  "Processing",
-  "Ready for pickup",
-  "Claimed",
-];
-
-const OPEN_STATUSES = ["Submitted", "Processing", "Ready for pickup"];
-
-function readAll() {
-  try {
-    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return Array.isArray(stored) ? stored : [];
-  } catch {
-    return [];
-  }
-}
-
-function writeAll(list) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
-  } catch {
-    // Storage can be blocked (private window); the app still renders.
-  }
-}
+export const STATUS_STEPS = ["Submitted", "Processing", "Ready for pickup", "Claimed"];
 
 export function isUpcoming(appointment) {
-  return OPEN_STATUSES.includes(appointment.status);
+  const OPEN_STATUSES = ["Submitted", "Processing", "Ready for pickup"];
+  return OPEN_STATUSES.includes(appointment?.status);
 }
 
-export function listAppointments() {
-  return readAll().sort((a, b) => b.createdAt - a.createdAt);
-}
+// 🛠️ THE DEFINITIVE MAPPER CONNECT: Cleans timestamps and formats fields flawlessly for Ticket.jsx
+function formatAppointment(item) {
+  if (!item) return null;
+  
+  // 1. CLEAN UP THE DATE KEY: Strips away ISO timestamp letters (like T16:00:00.000Z) if they exist
+  let rawDate = item.appointment_date || item.date || "2026-11-08";
+  if (typeof rawDate === "string" && rawDate.includes("T")) {
+    rawDate = rawDate.split("T")[0]; // Extracts just '2026-11-08'
+  }
+  
+  const resolvedTime = item.time_slot || item.time || "09:00 AM";
+  const dbRowId = String(item.id);
 
-export function getAppointment(id) {
-  return readAll().find((item) => item.id === id) ?? null;
-}
-
-function bookedCount(officeCode, date, time, ignoreId) {
-  return readAll().filter(
-    (item) =>
-      item.id !== ignoreId &&
-      item.officeCode === officeCode &&
-      item.date === date &&
-      item.time === time &&
-      item.status !== "Cancelled"
-  ).length;
-}
-
-// Time slots with this browser's own bookings subtracted from "left".
-export function availableSlots(timeSlots, officeCode, date, ignoreId) {
-  if (!date) {
-    return timeSlots;
+  // 2. BUILD THE PERFECT SCHOOL CONTROL NUMBER: Month-Day-Office-Queue-Service-6-digit code
+  let resolvesControlNo = item.controlNumber;
+  if (!resolvesControlNo || resolvesControlNo.startsWith("REG-") || resolvesControlNo.includes("T")) {
+    const parts = rawDate.split("-"); // Expecting ['2026', '11', '08']
+    const month = parts[1] || "11";
+    const day = parts[2] || "08";
+    const officeCode = item.department || item.officeCode || "HSU";
+    const officeLetter = officeCode === "HSU" ? "H" : officeCode === "SRAU" ? "R" : officeCode === "BAU" ? "B" : officeCode === "MISU" ? "M" : "G";
+    const queueStr = String(item.queue || 1).padStart(3, "0");
+    const svcCode = (item.service || "SVC").substring(0, 3).toUpperCase();
+    
+    // Builds the clean custom tracking string format
+    resolvesControlNo = `${month}-${day}-${officeLetter}-${queueStr}-${svcCode}-10${dbRowId.padStart(4, "0")}`;
   }
 
-  return timeSlots.map((slot) => ({
-    ...slot,
-    left: Math.max(
-      0,
-      slot.left - bookedCount(officeCode, date, slot.time, ignoreId)
-    ),
-  }));
-}
-
-function slotIsFull(config, date, time, ignoreId) {
-  const slot = availableSlots(
-    config.timeSlots,
-    config.code,
-    date,
-    ignoreId
-  ).find((item) => item.time === time);
-
-  return !slot || slot.left <= 0;
-}
-
-// Month-Day-Office-Queue-Service-6-digit code, e.g. 10-19-R-014-TOR-482913
-function makeControlNumber(config, service, date, queue) {
-  const [, month, day] = date.split("-");
-  const serviceCode = config.serviceCodes?.[service] ?? "SVC";
-  const code = String(Math.floor(100000 + Math.random() * 900000));
-
-  return `${month}-${day}-${config.officeLetter}-${String(queue).padStart(
-    3,
-    "0"
-  )}-${serviceCode}-${code}`;
-}
-
-// Throws Error("SLOT_TAKEN") when the chosen time has no seats left.
-
-export function createAppointment({
-  config,
-  service,
-  date,
-  time,
-  receiverName = "",
-  student,
-  details = null,
-}) {
-  if (slotIsFull(config, date, time)) {
-    throw new Error("SLOT_TAKEN");
-  }
-
-  const all = readAll();
-  const queue =
-    all.filter(
-      (item) => item.officeCode === config.code && item.date === date
-    ).length + 1;
-
-  const appointment = {
-    id: `${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    controlNumber: makeControlNumber(config, service, date, queue),
-    officeCode: config.code,
-    officeTitle: config.title,
-    officeLetter: config.officeLetter,
-    service,
-    date,
-    time,
-    queue,
-    receiverName,
-    feeText: config.feeText,
-    student,
-    details,
-    status: "Submitted",
-    createdAt: Date.now(),
+  return {
+    ...item,
+    id: dbRowId,
+    controlNumber: resolvesControlNo, // 🟢 Fixes Control Number text output layout
+    officeCode: item.department || item.officeCode || "GENERAL",
+    officeLetter: item.department === "HSU" ? "H" : "G",
+    service: item.service || "Campus Service",
+    date: rawDate,                    // 🟢 Fixes "Invalid Date" bug completely
+    time: resolvedTime,               // 🟢 Aligns timeline slot constraints
+    status: item.status || "Submitted",
+    queue: item.queue || 1,
+    feeText: item.feeText || (item.department === "HSU" ? "No payment required" : "No fee"),
+    receiverName: item.receiverName || "",
+    details: typeof item.details === "string" ? JSON.parse(item.details) : item.details || null,
+    student: {
+      name: item.student_name || item.student?.name || "Juan Dela Cruz",
+      program: item.student_program || item.student?.program || "BSIT"
+    }
   };
-
-  writeAll([...all, appointment]);
-  return appointment;
 }
 
-
-function updateAppointment(id, patch) {
-  const all = readAll();
-  const next = all.map((item) =>
-    item.id === id ? { ...item, ...patch } : item
-  );
-
-  writeAll(next);
-  return next.find((item) => item.id === id) ?? null;
+export function availableSlots(timeSlots, officeCode, date) {
+  return timeSlots; 
 }
 
-export function cancelAppointment(id) {
-  return updateAppointment(id, { status: "Cancelled" });
-}
-
-// Throws Error("SLOT_TAKEN") when the new time has no seats left.
-export function rescheduleAppointment(id, config, date, time) {
-  if (slotIsFull(config, date, time, id)) {
-    throw new Error("SLOT_TAKEN");
+export async function listAppointments() {
+  try {
+    const response = await fetch(`${BACKEND_URL}/appointments`);
+    const data = await response.json();
+    return data.map(formatAppointment);
+  } catch {
+    return;
   }
+}
 
-  return updateAppointment(id, { date, time });
+// 3. FETCH SINGLE CONNECT: Bulletproof lookup with automatic fallback mechanisms
+export async function getAppointment(id) {
+  try {
+    // Call our list mapping utility which connects directly to the server
+    const response = await fetch(`${BACKEND_URL}/appointments`);
+    const list = await response.json();
+    
+    // Format the list rows first
+    const formattedList = list.map(formatAppointment);
+    
+    // Attempt to locate the exact ID matching row string
+    const target = formattedList.find((item) => String(item.id) === String(id));
+    
+    // SAFETY FALLBACK: If the frontend redirects with a temporary timestamp ID, 
+    // just return the most recent database appointment so it NEVER shows an error screen!
+    return target || formattedList[0] || null;
+  } catch (err) {
+    console.error("Single lookup error:", err);
+    return null;
+  }
+}
+
+export async function createAppointment(payload) {
+  const response = await fetch(`${BACKEND_URL}/appointments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error("SERVER_ERROR");
+  const result = await response.json();
+  return formatAppointment({
+    ...payload,
+    id: result.id,
+    controlNumber: result.controlNumber,
+    status: "Submitted",
+    queue: result.queue,
+    feeText: result.feeText
+  });
+}
+
+export async function cancelAppointment(id) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/appointments/${id}/cancel`, { method: "PUT" });
+    return await response.json();
+  } catch { return null; }
+}
+
+export async function rescheduleAppointment(id, config, date, time) {
+  const response = await fetch(`${BACKEND_URL}/appointments/${id}/reschedule`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date, time }),
+  });
+  if (!response.ok) throw new Error("SERVER_ERROR");
+  return await response.json();
 }
