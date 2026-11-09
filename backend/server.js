@@ -48,25 +48,33 @@ app.post("/api/appointments", async (req, res) => {
     // 1. Safe Naming Extraction Layer (handles all variations safely)
     const studentProgram = student?.program || req.body.studentProgram || "BSIT"; 
     const studentName = student?.name || req.body.studentName || "Juan Dela Cruz";
-    const studentEmail = student?.email || req.body.studentEmail || "student@rtu.edu.ph";
+    const studentEmail = student?.email || req.body.studentEmail || null;
     
-    const cleanOffice = officeCode || req.body.officeCode || req.body.department || req.body.config?.code || "GENERAL";
-    const cleanService = service || req.body.service || req.body.config?.service || "Medical Assessment (Freshmen)";
+    const cleanOffice = officeCode || req.body.officeCode || req.body.department || "GENERAL";
+    const cleanService = service || req.body.service || req.body.config?.service || "Books";
     
     const cleanDate = date || req.body.appointment_date || req.body.appointmentDate || "2026-11-08";
     const cleanTime = time || req.body.time_slot || req.body.timeSlot || "09:00 AM";
 
-    // 2. Manage User Records Pointers safely
-    const [users] = await db.query("SELECT id FROM users WHERE student_id_number = ?", [studentProgram]);
+    // 2. Manage User Records Pointers Safely Without Email Duplicates
+    const [users] = await db.query("SELECT * FROM users WHERE student_id_number = ?", [studentProgram]);
     let userId;
-    if (users.length === 0) {
+    
+    if (!users || users.length === 0) {
+      // 🟢 THE FIX: Generate a completely unique email address suffix string to stop the duplicate key crash!
+      const uniqueSuffix = `${Date.now().toString().slice(-4)}_${Math.floor(Math.random() * 1000)}`;
+      const uniqueEmail = studentEmail || `student_${uniqueSuffix}@rtu.edu.ph`;
+      
       const [newStudent] = await db.query(
         'INSERT INTO users (student_id_number, name, email, password, role) VALUES (?, ?, ?, "hashed_pass", "student")',
-        [studentProgram, studentName, studentEmail]
+        [studentProgram, studentName, uniqueEmail]
       );
       userId = newStudent.insertId;
+      console.log(`👤 Created fresh student profile row with unique email: ${uniqueEmail}`);
     } else {
-      userId = users[0]?.id || users.id || users || 1;
+      // Correctly read row object whether it returns single or array rows
+      const targetUser = Array.isArray(users) ? users[0] : users;
+      userId = targetUser?.id || users?.id || users;
     }
 
     // 3. Queue Tracking Counter Calculations
@@ -74,7 +82,6 @@ app.post("/api/appointments", async (req, res) => {
       'SELECT COUNT(*) as count FROM appointments WHERE department = ? AND appointment_date = ?',
       [cleanOffice, cleanDate]
     );
-    // 🟢 FIXED: Safe array evaluation logic
     const nextQueue = (queueCheck?.length || 0) + 1;
 
     // 4. Structural Control Number Sequence Generator
