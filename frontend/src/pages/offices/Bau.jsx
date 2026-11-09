@@ -2,6 +2,7 @@ import { useState } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
 import "../../styles/bau.css";
+import { createAppointment } from "../../services/appointments.js";
 
 const books = [
   { code: "6617", title: "Treasury Management", price: 325 },
@@ -327,7 +328,7 @@ export default function Bau() {
     setMessage("");
   }
 
-  function handleGenerateTicket() {
+  async function handleGenerateTicket() {
     if (category === "Books" && !selectedBookDetails) {
       setMessage("Please select a book first.");
       return;
@@ -339,18 +340,11 @@ export default function Bau() {
         return;
       }
 
-      const missingSchoolItems = schoolUniformItems[gender].filter(
-        (item) => !schoolSelections[item]
-      );
-
-      const missingPeItems = peUniformItems.filter(
-        (item) => !peSelections[item]
-      );
+      const missingSchoolItems = schoolUniformItems[gender].filter((item) => !schoolSelections[item]);
+      const missingPeItems = peUniformItems.filter((item) => !peSelections[item]);
 
       if (missingSchoolItems.length || missingPeItems.length) {
-        setMessage(
-          "Please select a size for every school uniform and PE uniform item."
-        );
+        setMessage("Please select a size for every school uniform and PE uniform item.");
         return;
       }
     }
@@ -360,9 +354,26 @@ export default function Bau() {
       return;
     }
 
-    setMessage("");
-setTicketNumber(`BAU-${Math.floor(100000 + Math.random() * 900000)}`);
-setShowTicket(true);
+    try {
+      setMessage("Saving transaction...");
+      
+      // Determine explicit structural service string mappings based on chosen categories
+      const activeServiceString = category === "Books" ? "Books" : "Uniforms";
+
+      const appointment = await createAppointment({
+        officeCode: "BAU",
+        service: activeServiceString,
+        date: selectedDate,
+        time: selectedTime,
+        student: { name: "Juan Dela Cruz", program: "BSIT" },
+        feeText: category === "Books" ? `₱${selectedBookDetails.price.toFixed(2)}` : "Uniform Fee Setup",
+        details: category === "Books" ? { type: "book", ...selectedBookDetails } : { type: "uniform", gender, schoolSelections, peSelections }
+      });
+
+      window.location.href = `/ticket?id=${encodeURIComponent(appointment.id)}&service=${encodeURIComponent(activeServiceString)}`;
+    } catch (err) {
+      setMessage("Failed to log entry: " + err.message);
+    }
   }
 
   if (showTicket) {

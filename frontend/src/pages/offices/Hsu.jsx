@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
 import "../../styles/hsu.css";
+import { createAppointment } from "../../services/appointments.js";
 
 const services = [
   {
@@ -189,7 +190,7 @@ export default function Hsu() {
     }));
   }
 
-  function confirmAppointment(event) {
+   async function confirmAppointment(event) {
     event.preventDefault();
 
     const requiredFields = [
@@ -212,11 +213,27 @@ export default function Hsu() {
       return;
     }
 
-    const randomNumber = Math.floor(100000 + Math.random() * 900000);
+    try {
+      // Map frontend category title cleanly to match your custom 3-letter abbreviation dictionaries (MAF, DEF, MDC)
+      const serviceTitle = selectedService.title;
 
-    setTicketNumber(`HSU-${randomNumber}`);
-    setStep("ticket");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+      const appointment = await createAppointment({
+        officeCode: "HSU",
+        service: serviceTitle,
+        date: selectedDate.toISOString().split('T')[0], // Parse visual object state back into clean 'YYYY-MM-DD' text columns strings
+        time: selectedTime,
+        student: {
+          name: form.fullName,
+          program: form.course
+        },
+        feeText: "No payment required"
+      });
+
+      // Force view redirect instantly loading values securely from active session states!
+      window.location.href = `/ticket?id=${encodeURIComponent(appointment.id)}&service=${encodeURIComponent(serviceTitle)}`;
+    } catch (err) {
+      alert("Server Write Exception: " + err.message);
+    }
   }
 
   function startOver() {

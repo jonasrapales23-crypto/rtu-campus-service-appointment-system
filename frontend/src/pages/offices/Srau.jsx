@@ -1,3 +1,5 @@
+import { createAppointment } from "../../services/appointments.js";
+import { currentStudent } from "../../data/student.js";
 import { useState } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
@@ -21,24 +23,15 @@ const timeSlots = [
 ];
 
 function addWorkingDays(date, count) {
-  const result = new Date(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  );
-
+  const result = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   let added = 0;
-
   while (added < count) {
     result.setDate(result.getDate() + 1);
-
     const day = result.getDay();
-
     if (day !== 0 && day !== 6) {
       added++;
     }
   }
-
   return result;
 }
 
@@ -46,7 +39,6 @@ function dateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
-
   return `${year}-${month}-${day}`;
 }
 
@@ -69,27 +61,15 @@ function getMonthLabel(date) {
 function UploadBox({ title, note, file, onChange }) {
   return (
     <label className="srau-upload-box">
-      <span className="upload-icon" aria-hidden="true">
-        📄 ↑
-      </span>
-
+      <span className="upload-icon" aria-hidden="true">📄 ↑</span>
       <span>{title}</span>
-
       {file ? (
         <span className="upload-file-name">{file.name}</span>
       ) : (
         <span className="upload-note">{note}</span>
       )}
-
-      <input
-        type="file"
-        accept=".pdf,.jpg,.jpeg,.png"
-        onChange={onChange}
-      />
-
-      <span className="upload-action">
-        {file ? "Change file" : "Choose file"}
-      </span>
+      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={onChange} />
+      <span className="upload-action">{file ? "Change file" : "Choose file"}</span>
     </label>
   );
 }
@@ -106,111 +86,56 @@ export default function Srau() {
   const [selectedTime, setSelectedTime] = useState("9:00 AM");
   const [message, setMessage] = useState("");
 
-  // Demo processing rule: five working days before pickup.
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-
   const earliestPickup = addWorkingDays(today, 5);
 
-  const [selectedDate, setSelectedDate] = useState(
-    () => dateKey(addWorkingDays(new Date(), 5))
-  );
-
+  const [selectedDate, setSelectedDate] = useState(() => dateKey(addWorkingDays(new Date(), 5)));
   const [visibleMonth, setVisibleMonth] = useState(() => {
     const earliest = addWorkingDays(new Date(), 5);
-
-    return new Date(
-      earliest.getFullYear(),
-      earliest.getMonth(),
-      1
-    );
+    return new Date(earliest.getFullYear(), earliest.getMonth(), 1);
   });
 
-  // Build the calendar dynamically for the visible month.
   const calendarYear = visibleMonth.getFullYear();
   const calendarMonth = visibleMonth.getMonth();
-
-  const firstWeekday = new Date(
-    calendarYear,
-    calendarMonth,
-    1
-  ).getDay();
-
-  const daysInMonth = new Date(
-    calendarYear,
-    calendarMonth + 1,
-    0
-  ).getDate();
+  const firstWeekday = new Date(calendarYear, calendarMonth, 1).getDay();
+  const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
 
   const calendarCells = [
     ...Array(firstWeekday).fill(null),
-    ...Array.from(
-      { length: daysInMonth },
-      (_, index) => index + 1
-    ),
+    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
   ];
 
-  const minimumMonth = new Date(
-    earliestPickup.getFullYear(),
-    earliestPickup.getMonth(),
-    1
-  );
-
-  const canGoToPreviousMonth =
-    visibleMonth.getTime() > minimumMonth.getTime();
+  const minimumMonth = new Date(earliestPickup.getFullYear(), earliestPickup.getMonth(), 1);
+  const canGoToPreviousMonth = visibleMonth.getTime() > minimumMonth.getTime();
 
   function changeMonth(amount) {
     setVisibleMonth((current) => {
-      const next = new Date(
-        current.getFullYear(),
-        current.getMonth() + amount,
-        1
-      );
-
-      if (next < minimumMonth) {
-        return minimumMonth;
-      }
-
+      const next = new Date(current.getFullYear(), current.getMonth() + amount, 1);
+      if (next < minimumMonth) return minimumMonth;
       return next;
     });
   }
 
   function chooseDate(day) {
-    const date = new Date(
-      calendarYear,
-      calendarMonth,
-      day
-    );
-
+    const date = new Date(calendarYear, calendarMonth, day);
     date.setHours(0, 0, 0, 0);
-
-    if (date < earliestPickup) {
-      return;
-    }
-
+    if (date < earliestPickup) return;
     setSelectedDate(dateKey(date));
     setMessage("");
   }
-
-  function handleGenerateTicket() {
+   // 🟢 BALANCED: Full-stack asynchronous data-save submission handler
+  async function handleGenerateTicket() {
     setMessage("");
 
     if (!validId || !requiredDocument) {
-      setMessage(
-        "Please upload your valid ID and required document."
-      );
+      setMessage("Please upload your valid ID and required document.");
       return;
     }
 
     if (claimant === "someone-else") {
-      if (
-        !authorizationLetter ||
-        !receiverId ||
-        !receiverName.trim()
-      ) {
-        setMessage(
-          "Please complete the receiver details and upload the required documents."
-        );
+      if (!authorizationLetter || !receiverId || !receiverName.trim()) {
+        setMessage("Please complete the receiver details and upload the required documents.");
         return;
       }
     }
@@ -220,128 +145,106 @@ export default function Srau() {
       return;
     }
 
-    setMessage(
-      "Your selections are ready. Ticket generation will be available when the backend is connected."
-    );
+    try {
+      setMessage("Connecting to backend database...");
+      
+      const appointment = await createAppointment({
+        officeCode: "SRAU",
+        service: service,
+        date: selectedDate,
+        time: selectedTime,
+        receiverName: claimant === "someone-else" ? receiverName.trim() : "",
+        student: currentStudent || { name: "Juan Dela Cruz", program: "BSIT" },
+        feeText: service === "Transcript of Records" ? "TOR Fee" : "Certificate Fee"
+      });
+
+      window.location.href = `/ticket?id=${encodeURIComponent(appointment.id)}&service=${encodeURIComponent(service)}`;
+    } catch (err) {
+      setMessage("Database Connection Error: " + err.message);
+    }
   }
 
   return (
     <div className="site-shell">
       <Navbar />
-
       <main className="srau-main">
-        <h1 className="srau-title">
-          University Registrar's Office (SRAU)
-        </h1>
+        <h1 className="srau-title">University Registrar's Office (SRAU)</h1>
 
         {/* 1. Choose a service */}
         <section className="srau-section">
           <h2>1 · Choose a service</h2>
+          <div className="srau-service-grid">
+            {services.map((item) => (
+              <div className="srau-service-item" key={item}>
+                <button
+                  type="button"
+                  className={`srau-service-option ${service === item ? "selected" : ""}`}
+                  onClick={() => setService(item)}
+                  aria-pressed={service === item}
+                >
+                  {item}
+                  {item === "Transcript of Records" && " ▾"}
+                </button>
+                {item === "Transcript of Records" && service === "Transcript of Records" && (
+                  <select
+                    className="srau-tor-level"
+                    value={torLevel}
+                    onChange={(event) => setTorLevel(event.target.value)}
+                    aria-label="Transcript of Records academic level"
+                  >
+                    <option value="College">College</option>
+                    <option value="Master's">Master's</option>
+                    <option value="Doctor's">Doctor's</option>
+                  </select>
+                )}
+              </div>
+            ))}
+          </div>
 
-          
-<div className="srau-service-grid">
-  {services.map((item) => (
-    <div className="srau-service-item" key={item}>
-      <button
-        type="button"
-        className={`srau-service-option ${
-          service === item ? "selected" : ""
-        }`}
-        onClick={() => setService(item)}
-        aria-pressed={service === item}
-      >
-        {item}
-        {item === "Transcript of Records" && " ▾"}
-      </button>
-
-      {item === "Transcript of Records" &&
-        service === "Transcript of Records" && (
-          <select
-            className="srau-tor-level"
-            value={torLevel}
-            onChange={(event) => setTorLevel(event.target.value)}
-            aria-label="Transcript of Records academic level"
-          >
-            <option value="College">College</option>
-            <option value="Master's">Master's</option>
-            <option value="Doctor's">Doctor's</option>
-          </select>
-        )}
-    </div>
-  ))}
-</div>
-
-<div className="srau-fee-note">
-  <strong>Fee:</strong>{" "}
-  {service === "Transcript of Records"
-    ? `₱${
-        torLevel === "College"
-          ? 350
-          : torLevel === "Master's"
-          ? 500
-          : 750
-      } + ₱30 document stamp = ₱${
-        torLevel === "College"
-          ? 380
-          : torLevel === "Master's"
-          ? 530
-          : 780
-      }`
-    : service === "CTC / Authentication"
-    ? "₱150"
-    : service === "Certificates"
-    ? "₱150"
-    : "₱500"}
-  {" · "}
-  <strong>Processing:</strong> 5 working days. The office
-  prepares your document before you arrive.
-</div>
-
+          <div className="srau-fee-note">
+            <strong>Fee:</strong>{" "}
+            {service === "Transcript of Records"
+              ? `₱${torLevel === "College" ? 350 : torLevel === "Master's" ? 500 : 750} + ₱30 document stamp = ₱${torLevel === "College" ? 380 : torLevel === "Master's" ? 530 : 780}`
+              : service === "CTC / Authentication"
+              ? "₱150"
+              : service === "Certificates"
+              ? "₱150"
+              : "₱500"}
+            {" · "}
+            <strong>Processing:</strong> 5 working days. The office prepares your document before you arrive.
+          </div>
         </section>
 
         {/* 2. Upload requirements */}
         <section className="srau-section">
           <h2>2 · Upload requirements</h2>
-
           <div className="srau-upload-grid">
             <UploadBox
               title="Valid ID"
               note="No file selected"
               file={validId}
-              onChange={(event) =>
-                setValidId(event.target.files?.[0] || null)
-              }
+              onChange={(event) => setValidId(event.target.files?.[0] || null)}
             />
-
             <UploadBox
               title="Required document"
               note="Set by the office"
               file={requiredDocument}
-              onChange={(event) =>
-                setRequiredDocument(event.target.files?.[0] || null)
-              }
+              onChange={(event) => setRequiredDocument(event.target.files?.[0] || null)}
             />
           </div>
-
-          <p className="srau-help">
-            Upload your requirements. Accepted files: PDF, JPG,
-            JPEG, or PNG.
-          </p>
+          <p className="srau-help">Upload your requirements. Accepted formats: PDF, JPG, JPEG, or PNG.</p>
         </section>
 
         {/* 3. Claimant */}
         <section className="srau-section">
           <h2>3 · Who will claim the document?</h2>
-
           <select
             className="srau-claimant-select"
             value={claimant}
             onChange={(event) => setClaimant(event.target.value)}
             aria-label="Who will claim the document?"
           >
-            <option value="">
-              Select who will claim the document
-            </option>
+            <option value="">Select who will claim the document</option>
             <option value="me">Me</option>
             <option value="someone-else">Someone else</option>
           </select>
@@ -353,34 +256,21 @@ export default function Srau() {
                   title="Authorization letter"
                   note="No file selected"
                   file={authorizationLetter}
-                  onChange={(event) =>
-                    setAuthorizationLetter(
-                      event.target.files?.[0] || null
-                    )
-                  }
+                  onChange={(event) => setAuthorizationLetter(event.target.files?.[0] || null)}
                 />
-
                 <UploadBox
                   title="Receiver's valid ID"
                   note="No file selected"
                   file={receiverId}
-                  onChange={(event) =>
-                    setReceiverId(
-                      event.target.files?.[0] || null
-                    )
-                  }
+                  onChange={(event) => setReceiverId(event.target.files?.[0] || null)}
                 />
               </div>
-
               <label className="srau-receiver-name">
                 Full name of the receiver
-
                 <input
                   type="text"
                   value={receiverName}
-                  onChange={(event) =>
-                    setReceiverName(event.target.value)
-                  }
+                  onChange={(event) => setReceiverName(event.target.value)}
                   placeholder="Enter receiver's full name"
                 />
               </label>
@@ -391,64 +281,27 @@ export default function Srau() {
         {/* 4. Pickup calendar and time */}
         <section className="srau-section">
           <h2>4 · Pick a pickup date and time</h2>
-
-          <p className="srau-earliest">
-            Earliest pickup: {formatDate(earliestPickup)} (after processing).
-          </p>
+          <p className="srau-earliest">Earliest pickup: {formatDate(earliestPickup)} (after processing).</p>
 
           <div className="srau-schedule">
             <div className="srau-calendar">
               <div className="srau-calendar-header">
-                <button
-                  type="button"
-                  onClick={() => changeMonth(-1)}
-                  disabled={!canGoToPreviousMonth}
-                  aria-label="Previous month"
-                >
-                  ‹
-                </button>
-
+                <button type="button" onClick={() => changeMonth(-1)} disabled={!canGoToPreviousMonth} aria-label="Previous month">‹</button>
                 <h3>{getMonthLabel(visibleMonth)}</h3>
-
-                <button
-                  type="button"
-                  onClick={() => changeMonth(1)}
-                  aria-label="Next month"
-                >
-                  ›
-                </button>
+                <button type="button" onClick={() => changeMonth(1)} aria-label="Next month">›</button>
               </div>
-
               <div className="srau-weekdays">
-                {["S", "M", "T", "W", "T", "F", "S"].map(
-                  (day, index) => (
-                    <span key={`${day}-${index}`}>{day}</span>
-                  )
-                )}
+                {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+                  <span key={`${day}-${index}`}>{day}</span>
+                ))}
               </div>
-
               <div className="srau-calendar-days">
                 {calendarCells.map((day, index) => {
-                  if (day === null) {
-                    return (
-                      <span
-                        className="srau-calendar-empty"
-                        key={`empty-${index}`}
-                      />
-                    );
-                  }
-
-                  const date = new Date(
-                    calendarYear,
-                    calendarMonth,
-                    day
-                  );
-
+                  if (day === null) return <span className="srau-calendar-empty" key={`empty-${index}`} />;
+                  const date = new Date(calendarYear, calendarMonth, day);
                   date.setHours(0, 0, 0, 0);
-
                   const disabled = date < earliestPickup;
                   const isSelected = dateKey(date) === selectedDate;
-
                   return (
                     <button
                       key={dateKey(date)}
@@ -468,36 +321,24 @@ export default function Srau() {
 
             <div className="srau-time-panel">
               <p className="srau-selected-date">
-                {selectedDate
-                  ? formatDate(
-                      new Date(`${selectedDate}T00:00:00`)
-                    )
-                  : "Choose a pickup date"}
+                {selectedDate ? formatDate(new Date(`${selectedDate}T00:00:00`)) : "Choose a pickup date"}
               </p>
-
               <div className="srau-time-slots">
                 {timeSlots.map((slot) => {
                   const unavailable = slot.left === 0;
-
                   return (
                     <button
                       key={slot.time}
                       type="button"
                       disabled={unavailable || !selectedDate}
-                      className={
-                        selectedTime === slot.time
-                          ? "selected"
-                          : ""
-                      }
+                      className={selectedTime === slot.time ? "selected" : ""}
                       onClick={() => {
                         setSelectedTime(slot.time);
                         setMessage("");
                       }}
                     >
                       <span>{slot.time}</span>
-                      <span>
-                        {unavailable ? "Full" : `${slot.left} left`}
-                      </span>
+                      <span>{unavailable ? "Full" : `${slot.left} left`}</span>
                     </button>
                   );
                 })}
@@ -506,22 +347,11 @@ export default function Srau() {
           </div>
         </section>
 
-        {message && (
-          <p className="srau-message" role="status">
-            {message}
-          </p>
-        )}
-
-        <button
-          className="srau-generate-button"
-          type="button"
-          onClick={handleGenerateTicket}
-        >
+        {message && <p className="srau-message" role="status">{message}</p>}
+        <button className="srau-generate-button" type="button" onClick={handleGenerateTicket}>
           Generate ticket
         </button>
       </main>
     </div>
   );
 }
-
-

@@ -1,5 +1,6 @@
 // SRAU (University Registrar's Office) booking settings.
 // Same shape as the other offices in officeBookings.js.
+
 export const srauConfig = {
   code: "SRAU",
   title: "University Registrar's Office (SRAU)",
