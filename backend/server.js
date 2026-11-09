@@ -36,8 +36,6 @@ app.get("/api/appointments/count", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-// 3. CREATE BOOKING: Production Fallback Insertion System
 app.post("/api/appointments", async (req, res) => {
   console.log("📥 RECEIVED BOOKING PAYLOAD:", req.body);
   
@@ -99,7 +97,6 @@ app.post("/api/appointments", async (req, res) => {
       [userId, cleanOffice, cleanDate, cleanTime]
     );
 
-    // Grab the dynamic generated ID
     const insertedId = result.insertId;
 
     // 6. Try updating extra columns if they exist, catch silently if they don't so the app never throws 500
@@ -131,6 +128,7 @@ app.post("/api/appointments", async (req, res) => {
   }
 });
 
+
 // 4. CANCEL LOGIC: Updates reservation fields state
 app.put("/api/appointments/:id/cancel", async (req, res) => {
   const { id } = req.params;
@@ -145,7 +143,6 @@ app.put("/api/appointments/:id/cancel", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 // 5. RESCHEDULE LOGIC: Shifts calendar items configurations
 app.put("/api/appointments/:id/reschedule", async (req, res) => {
   const { id } = req.params;
