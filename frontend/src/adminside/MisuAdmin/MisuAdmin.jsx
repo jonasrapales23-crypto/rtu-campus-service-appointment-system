@@ -20,7 +20,8 @@ const sections=["Dashboard","Queue","Requests","Records","Services","Reports"];
 const doneStatuses=["Served","Claimed","Done","No-show"];
 const badgeClass=(s)=>s.toLowerCase().replaceAll(" ","-");
 export default function MisuAdmin(){
- const [rows, setRows] = useState([]);
+const [section, setSection] = useState("Dashboard");
+const [rows, setRows] = useState([]);
 
   useEffect(() => {
     fetchAdminAppointments("MISU").then((liveData) => {

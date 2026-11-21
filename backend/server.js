@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 // ==========================================
-// 🎫 STUDENT & ADMIN APPOINTMENT ENDPOINTS
+// STUDENT & ADMIN APPOINTMENT ENDPOINTS
 // ==========================================
 
 // 1. FETCH ALL APPOINTMENTS FOR STUDENT TICKET & HISTORY
@@ -32,7 +32,7 @@ app.get("/api/appointments", async (req, res) => {
 
     res.json(combined);
   } catch (err) {
-    console.error("⛔ Fetch Appointments Error:", err.message);
+    console.error("Fetch Appointments Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -63,7 +63,7 @@ app.get("/api/admin/appointments", async (req, res) => {
 
     res.json(combined);
   } catch (err) {
-    console.error("⛔ Admin Fetch Error:", err.message);
+    console.error("Admin Fetch Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -102,21 +102,29 @@ app.put("/api/admin/appointments/:id/status", async (req, res) => {
 // 4. FETCH LIVE AUDIT LOGS FOR SUPER ADMIN
 app.get("/api/admin/audit-logs", async (req, res) => {
   try {
-    const [logs] = await db.query(`
-      SELECT 
-        al.id,
-        al.created_at,
-        al.action,
-        al.details,
-        COALESCE(u.name, 'System / Admin') AS user
-      FROM audit_logs al
-      LEFT JOIN users u ON al.user_id = u.id
-      ORDER BY al.id DESC
-      LIMIT 100
-    `);
-    res.json(logs);
+    // Select the raw log records array dynamically to bypass explicit column naming clashing constraints
+    const [logs] = await db.query("SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 100");
+    const [users] = await db.query("SELECT * FROM users");
+
+    const formattedLogs = logs.map((log) => {
+      // Find matching user row pointers gracefully if present
+      const actor = users.find((u) => u.id === log.user_id) || {};
+      
+      // Fallback variables gracefully check for whatever primary key tracking layout column exists natively
+      const resolvedLogId = log.id || log.log_id || log.id_log || Math.random();
+
+      return {
+        id: resolvedLogId,
+        created_at: log.created_at,
+        action: log.action || "SYSTEM_EVENT",
+        details: log.details || "Administrative operation logged.",
+        user: actor.name || "System / Admin"
+      };
+    });
+
+    res.json(formattedLogs);
   } catch (err) {
-    console.error("⛔ Audit Log Fetch Error:", err.message);
+    console.error("Audit Log Fetch Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -313,3 +321,111 @@ app.put("/api/appointments/:id/reschedule", async (req, res) => {
 });
 
 app.listen(PORT, () => console.log(`Backend Server running on port ${PORT}`));
+// ==========================================
+// ACCOUNT AUTHENTICATION GATEWAY
+// ==========================================
+
+app.post("/auth/login", async (req, res) => {
+  const { username, password } = req.body;
+  const cleanUser = String(username).trim();
+
+  // 1. Specific Office Admin Testing Verification Bounds
+  const adminAccounts = {
+    "SrauAdmin": { role: "srau-admin", officeCode: "SRAU", name: "Registrar Records Head" },
+    "MisuAdmin": { role: "misu-admin", officeCode: "MISU", name: "MIS Tech Window Administrator" },
+    "HsuAdmin":  { role: "hsu-admin", officeCode: "HSU",  name: "Health Clinic Staff Lead" },
+    "BauAdmin":  { role: "bau-admin", officeCode: "BAU",  name: "Business Affairs Supervisor" },
+    "SuperAdmin": { role: "super-admin", officeCode: "SUPER", name: "System Super Admin" }
+  };
+
+  if (adminAccounts[cleanUser]) {
+    if (password === "Admin") {
+      return res.json({
+        role: adminAccounts[cleanUser].role,
+        officeCode: adminAccounts[cleanUser].officeCode,
+        user: { name: adminAccounts[cleanUser].name, studentNumber: "" }
+      });
+    } else {
+      return res.status(401).json({ error: "Invalid password for administrative clearance." });
+    }
+  }
+
+  // 2. Structural Student Account Validation Matching 20xx-xxxxxx Layout Parameters
+  const studentPattern = /^20\d{2}-\d{5,6}$/;
+  if (studentPattern.test(cleanUser)) {
+    if (password === "12345678") {
+      return res.json({
+        role: "student",
+        officeCode: null,
+        user: { name: "Juan Dela Cruz", studentNumber: cleanUser }
+      });
+    } else {
+      return res.status(401).json({ error: "Incorrect student portal account password." });
+    }
+  }
+
+  return res.status(404).json({ error: "Account username or tracking ID not recognized." });
+});
+
+// Handles new student profile creation and inserts records into the database
+app.post("/auth/register", async (req, res) => {
+  const { studentNumber, fullName, email, password } = req.body;
+
+  // Sanitize input values to remove leading or trailing spaces
+  const cleanNumber = String(studentNumber).trim();
+  const cleanName = String(fullName).trim();
+  const cleanEmail = String(email).trim();
+
+  // Validate student number structural format layout parameters (20xx-xxxxxx)
+  const studentPattern = /^20\d{2}-\d{5,6}$/;
+  if (!studentPattern.test(cleanNumber)) {
+    return res.status(400).json({ error: "Invalid format. Student ID must match the 20xx-xxxxxx pattern." });
+  }
+
+  try {
+    // Start database transaction block for safety
+    await db.query("START TRANSACTION");
+
+    // Check if the Student ID number already exists in the users table
+    const [existingUsers] = await db.query("SELECT * FROM users WHERE student_id_number = ?", [cleanNumber]);
+    if (existingUsers && existingUsers.length > 0) {
+      await db.query("ROLLBACK");
+      return res.status(400).json({ error: "This Student ID number is already registered." });
+    }
+
+    // Insert the clean profile record natively into the users table matrix
+    const [result] = await db.query(
+      'INSERT INTO users (student_id_number, name, email, password, role) VALUES (?, ?, ?, ?, "student")',
+      [cleanNumber, cleanName, cleanEmail, password || "12345678"]
+    );
+
+    const newUserId = result.insertId;
+
+    // Log the registration event cleanly inside the system audit logs table
+    await db.query(
+      'INSERT INTO audit_logs (action, details, ip_address) VALUES ("STUDENT_REGISTRATION", ?, ?)',
+      [`Student ${cleanName} (${cleanNumber}) created a fresh system account profile.`, req.ip]
+    );
+
+    // Commit changes safely to the database
+    await db.query("COMMIT");
+
+    // Return session tracking fields matching the login endpoint format
+    res.status(201).json({
+      success: true,
+      role: "student",
+      officeCode: null,
+      user: {
+        id: newUserId,
+        name: cleanName,
+        studentNumber: cleanNumber,
+        email: cleanEmail
+      }
+    });
+  } catch (err) {
+    // Rollback transaction to maintain data integrity if an exception occurs
+    await db.query("ROLLBACK");
+    console.error("Registration Error Exception:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});

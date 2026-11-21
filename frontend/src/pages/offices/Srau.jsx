@@ -124,7 +124,7 @@ export default function Srau() {
     setSelectedDate(dateKey(date));
     setMessage("");
   }
-   // 🟢 BALANCED: Full-stack asynchronous data-save submission handler
+   // Full-stack asynchronous data-save submission handler
   async function handleGenerateTicket() {
     setMessage("");
 

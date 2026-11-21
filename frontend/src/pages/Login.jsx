@@ -4,24 +4,56 @@ import Footer from "../components/Footer.jsx";
 import "../styles/Login.css";
 
 export default function Login() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleLogin(event) {
+  async function handleLogin(event) {
     event.preventDefault();
     setMessage("");
 
-    if (!email.trim() || !password) {
-      setMessage("Please enter your RTU email and password.");
+    if (!username.trim() || !password) {
+      setMessage("Please enter your credentials.");
       return;
     }
 
-    setMessage("Login is not connected to the backend yet.");
+    setLoading(true);
+
+    try {
+      const response = await fetch("http://localhost:5000/auth/login", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ username: username.trim(), password }),
+});
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Authentication failed.");
+      }
+
+      localStorage.setItem("userRole", data.role);
+      localStorage.setItem("userOffice", data.officeCode || "");
+      localStorage.setItem("profileName", data.user.name);
+      localStorage.setItem("studentNumber", data.user.studentNumber || "");
+
+      if (data.role === "student") {
+        window.location.href = "/home";
+      } else {
+        const officePath = String(data.officeCode).toLowerCase();
+        window.location.href = `/${officePath}-admin`;
+      }
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
     <div className="site-shell">
+      {/* Navbar will automatically detect the /login path and hide all active user links */}
       <Navbar />
 
       <main className="login-main">
@@ -30,16 +62,16 @@ export default function Login() {
 
           <form onSubmit={handleLogin}>
             <div className="input-group">
-              <label htmlFor="email">RTU email</label>
+              <label htmlFor="username">Student ID or Admin Username</label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="username"
-                placeholder="Enter your RTU email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                id="username"
+                name="username"
+                type="text"
+                placeholder="e.g. 2024-00123 or SrauAdmin"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -49,11 +81,11 @@ export default function Login() {
                 id="password"
                 name="password"
                 type="password"
-                autoComplete="current-password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
                 required
+                disabled={loading}
               />
             </div>
 
@@ -63,8 +95,8 @@ export default function Login() {
               </p>
             )}
 
-            <button className="login-button" type="submit">
-              Login
+            <button className="login-button" type="submit" disabled={loading}>
+              {loading ? "Signing in..." : "Login"}
             </button>
             <p className="register-prompt">
               No account yet?{" "}

@@ -1,21 +1,63 @@
+import { useState } from "react";
 import Navbar from "../navbar/Navbar.jsx";
 import Footer from "../components/Footer.jsx";
 import "../styles/Register.css";
 
 export default function Register() {
-  function handleRegister(event) {
-    event.preventDefault();
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-    // Remember the email so the verify screen can show it (masked).
-    const email = new FormData(event.currentTarget).get("personalEmail");
+  // Communicates with the Express backend to process user registration info
+  async function handleRegister(event) {
+    event.preventDefault();
+    setMessage("");
+    setLoading(true);
+
+    const formData = new FormData(event.currentTarget);
+    
+    // Combine First Name and Last Name to match the backend fullName constraint
+    const firstName = String(formData.get("firstName") || "").trim();
+    const lastName = String(formData.get("lastName") || "").trim();
+    const fullName = `${firstName} ${lastName}`.trim();
+    
+    const email = String(formData.get("personalEmail") || "").trim();
+    const studentNumber = String(formData.get("studentNumber") || "").trim();
+    const password = String(formData.get("password") || "");
+
+    // Structure properties cleanly to fit table column layouts
+    const payload = {
+      studentNumber,
+      fullName,
+      email,
+      password
+    };
 
     try {
-      sessionStorage.setItem("rtu-ccsas.pendingEmail", String(email ?? ""));
-    } catch {
-      // Storage can be blocked; the verify screen then shows "your email".
-    }
+      const response = await fetch("http://localhost:5000/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
 
-    window.location.href = "/verify";
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Registration pipeline failed.");
+      }
+
+      // Store authentic session context keys locally upon successful registration run
+      localStorage.setItem("userRole", data.role);
+      localStorage.setItem("userOffice", "");
+      localStorage.setItem("profileName", data.user.name);
+      localStorage.setItem("studentNumber", data.user.studentNumber);
+
+      // Route the fresh student instantly into their homepage booking screen
+      window.location.href = "/home";
+    } catch (err) {
+      setMessage(err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -38,6 +80,7 @@ export default function Register() {
                 type="text"
                 autoComplete="given-name"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -49,6 +92,7 @@ export default function Register() {
                 type="text"
                 autoComplete="family-name"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -60,12 +104,13 @@ export default function Register() {
                 type="email"
                 autoComplete="email"
                 required
+                disabled={loading}
               />
             </div>
 
             <div className="register-field">
               <label htmlFor="program">Program / course</label>
-              <select id="program" name="program" required defaultValue="">
+              <select id="program" name="program" required defaultValue="" disabled={loading}>
                 <option value="" disabled></option>
                 <option value="BSIT">
                   Bachelor of Science in Information Technology
@@ -86,7 +131,9 @@ export default function Register() {
                 id="studentNumber"
                 name="studentNumber"
                 type="text"
+                placeholder="e.g. 2024-00123"
                 required
+                disabled={loading}
               />
             </div>
 
@@ -99,11 +146,18 @@ export default function Register() {
                 autoComplete="new-password"
                 minLength={8}
                 required
+                disabled={loading}
               />
             </div>
 
-            <button className="register-button" type="submit">
-              Send verification code
+            {message && (
+              <p className="form-message" role="status" style={{ color: "#b4232c", fontSize: "12px", margin: "10px 0", fontWeight: "bold" }}>
+                {message}
+              </p>
+            )}
+
+            <button className="register-button" type="submit" disabled={loading}>
+              {loading ? "Creating Account..." : "Register"}
             </button>
           </form>
 

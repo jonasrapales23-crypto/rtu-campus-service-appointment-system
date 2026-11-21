@@ -169,7 +169,7 @@ export async function rescheduleAppointment(id, config, date, time) {
 }
 
 // ==========================================
-// 🛡️ ADMIN SERVICE HELPERS
+// ADMIN SERVICE HELPERS
 // ==========================================
 
 export async function fetchAdminAppointments(targetOffice = null) {
