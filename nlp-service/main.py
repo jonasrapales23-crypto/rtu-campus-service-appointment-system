@@ -1,12 +1,15 @@
 import datetime as dt
+import io
+from PIL import Image
 from typing import List, Optional
 
 import joblib
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from pydantic import BaseModel
 
 from email_check import check_email
 from forecast import make_forecast
+from doc_check import check_document
 
 app = FastAPI(title="RTU-CCSAS NLP Service")
 model = joblib.load("model.joblib")
@@ -73,3 +76,31 @@ def forecast_endpoint(q: ForecastQuery):
         "days_of_history": len(history),
         "forecast": make_forecast(history, q.days_ahead, q.capacity),
     }
+
+MAX_BYTES = 5 * 1024 * 1024
+
+@app.post("/verify-document")
+def verify_document(
+    expected: str = Form(...),
+    names: str = Form(...),
+    file: UploadFile = File(...),
+):
+
+    if expected not in ("valid_id", "authorization letter"):
+        raise HTTPException(status_code=400, detail="expected must be valid_id or authorization letter")
+    data = file.file.read(MAX_BYTES + 1)
+    if len(data) > MAX_BYTES:
+        raise HTTPException(status_code=413, detail="File is larger than 5MB")
+    name_list = [n.strip() for n in names.split(",") if n.strip()]
+    if not name_list:
+        raise HTTPException(status_code=400, detail="At least one name must be provided")
+    try:
+        fmt = Image.open(io.BytesIO(data)).format
+    except Exception:
+        fmt = None
+    if fmt not in ("JPEG", "PNG"):
+        raise HTTPException(status_code=400, detail="Only JPG or PNG images are accepted")
+    try:
+        return check_document(data, expected, name_list)
+    except Exception:
+        raise HTTPException(status_code=400, detail="Could not read image")
