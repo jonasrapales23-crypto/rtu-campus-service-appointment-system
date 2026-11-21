@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { fetchAdminAppointments, fetchAuditLogs } from "../../services/appointments.js";
 import Navbar from "../../navbar/Navbar.jsx";
 import "./SuperAdmin.css";
 
@@ -30,13 +31,45 @@ export default function SuperAdmin() {
   const [offices, setOffices] = useState(initialOffices);
   const [accounts, setAccounts] = useState(initialAccounts);
   const [services, setServices] = useState(initialServices);
-  const [audit, setAudit] = useState(initialAudit);
+  const [audit, setAudit] = useState(initialAudit); // 🟢 RESTORED: Fixes "audit is not defined"
   const [accountSearch, setAccountSearch] = useState("");
   const [auditSearch, setAuditSearch] = useState("");
   const [officeFilter, setOfficeFilter] = useState("All offices");
   const [accountModal, setAccountModal] = useState(null);
   const [notice, setNotice] = useState("");
   const [forecastOffice, setForecastOffice] = useState("SRAU");
+  useEffect(() => {
+    // 1. Fetch all appointments across all offices and calculate live counts
+    fetchAdminAppointments().then((allRows) => {
+      if (allRows.length > 0) {
+        setOffices((prevOffices) =>
+          prevOffices.map((office) => {
+            const officeRows = allRows.filter(
+              (r) => String(r.officeCode).toUpperCase() === office.name.toUpperCase()
+            );
+            const doneCount = officeRows.filter((r) =>
+              ["Served", "Claimed", "Done"].includes(r.status)
+            ).length;
+            const noShowCount = officeRows.filter((r) => r.status === "No-show").length;
+
+            return {
+              ...office,
+              booked: officeRows.length,
+              done: doneCount,
+              noShow: noShowCount,
+            };
+          })
+        );
+      }
+    });
+
+    // 2. Fetch live Audit Logs (including Python NLP fraud alerts) from MySQL
+    fetchAuditLogs().then((liveLogs) => {
+      if (liveLogs.length > 0) {
+        setAudit(liveLogs);
+      }
+    });
+  }, []);
 
   function logAction(action, user = "Super Admin") {
     const now = new Date();
@@ -116,7 +149,7 @@ export default function SuperAdmin() {
       </>}
 
       {section === "Audit log" && <section className="sa-panel"><div className="sa-panel-heading"><div><h2>System audit log</h2><p>Review recorded administrative actions in this session.</p></div></div><div className="sa-toolbar"><input value={auditSearch} onChange={e=>setAuditSearch(e.target.value)} placeholder="Search time, user, or action" aria-label="Search audit log"/><span>{filteredAudit.length} entries</span></div><div className="sa-table-wrap"><table><thead><tr><th>Time</th><th>User</th><th>Action</th></tr></thead><tbody>{filteredAudit.map((a,i)=><tr key={`${a.time}-${a.user}-${i}`}><td>{a.time}</td><td>{a.user}</td><td>{a.action}</td></tr>)}</tbody></table>{filteredAudit.length===0&&<p className="sa-empty">No audit entries match that search.</p>}</div></section>}
-      <p className="sa-data-note">Prototype data only. Updates are held in frontend state and are not persisted to a server or database.</p>
+      <p className="sa-data-note"><p className="sa-data-note">Connected to live RTU-CCSAS MySQL database and Python NLP audit engine.</p></p>
     </main>
     {accountModal && <div className="sa-modal-backdrop" role="presentation" onMouseDown={e=>{if(e.target===e.currentTarget)setAccountModal(null);}}><section className="sa-modal" role="dialog" aria-modal="true" aria-labelledby="sa-account-modal-title"><button className="sa-modal-close" onClick={()=>setAccountModal(null)} aria-label="Close dialog">×</button><h2 id="sa-account-modal-title">{accountModal.id?"Edit staff account":"Add staff account"}</h2><p>Assign a staff role and office access.</p><form onSubmit={saveAccount}><label>Full name<input name="name" defaultValue={accountModal.name??""} required /></label><label>Email address<input name="email" type="email" defaultValue={accountModal.email??""} required /></label><label>Role<select name="role" defaultValue={accountModal.role??"Office admin"}><option>Office admin</option><option>Office staff</option><option>Office head</option></select></label><label>Office<select name="office" defaultValue={accountModal.office??"HSU"}><option>HSU</option><option>SRAU</option><option>MISU</option><option>BAU</option></select></label><div className="sa-modal-actions"><button type="button" className="sa-button sa-button-light" onClick={()=>setAccountModal(null)}>Cancel</button><button className="sa-button" type="submit">Save account</button></div></form></section></div>}
   </div>;

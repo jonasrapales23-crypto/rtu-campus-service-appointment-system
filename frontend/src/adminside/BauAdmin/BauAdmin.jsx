@@ -1,4 +1,6 @@
-import { useMemo, useState } from "react";
+// Replace line 1 with:
+import { useEffect, useMemo, useState } from "react";
+import { createAppointment, fetchAdminAppointments, updateAdminStatus } from "../../services/appointments.js";
 import Navbar from "../../navbar/Navbar.jsx";
 import CalendarSlotManagement from "../CalendarSlotManagement/CalendarSlotManagement.jsx";
 import VerifyAtCounterModal from "../components/VerifyAtCounterModal.jsx";
@@ -29,9 +31,18 @@ const initialSlots = [
 ];
 export default function BauAdmin(){
  const [section,setSection]=useState("Dashboard");
- const [rows,setRows]=useState(seed);
- const [products,setProducts]=useState(seedServices);
- const [selectedDate,setSelectedDate]=useState("2026-10-27");
+ const [rows, setRows] = useState([]);
+  const [products, setProducts] = useState(seedServices);
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    fetchAdminAppointments("BAU").then((liveData) => {
+      setRows(liveData);
+      if (liveData.length > 0 && !liveData.some((r) => r.date === selectedDate)) {
+        setSelectedDate(liveData[0].date);
+      }
+    });
+  }, []);
  const {slots,setSlots,dayStatus}=useDailySlots({template:initialSlots,rows,selectedDate});
  const [query,setQuery]=useState("");
  const [recordQuery,setRecordQuery]=useState("");
@@ -50,9 +61,56 @@ export default function BauAdmin(){
  const activeQueue=today.filter(r=>!closedStatuses.includes(r.status));
  const hours=[8,9,10,11,13,14,15,16].map(hour=>({hour,count:weekRows.filter(r=>{const m=r.time.match(/(\d{1,2}):\d{2}\s*(AM|PM)/i);if(!m)return false;let h=Number(m[1])%12;if(m[2].toUpperCase()==="PM")h+=12;return h===hour;}).length}));
  const maxHour=Math.max(1,...hours.map(h=>h.count));
- function updateStatus(id,status){setRows(old=>old.map(r=>r.id===id?{...r,status}:r));setNotice(`${id} marked ${status.toLowerCase()}.`);setModal(null);}
+async function updateStatus(id, status) {
+    const target = rows.find((r) => r.id === id);
+    if (target?.dbId) {
+      await updateAdminStatus(target.dbId, status, "BAU Admin");
+    }
+    setRows((old) => old.map((r) => (r.id === id ? { ...r, status } : r)));
+    setNotice(`${id} marked ${status.toLowerCase()}.`);
+    setModal(null);
+  }
+
  function openStudent(r){setRecordQuery(r.number&&r.number!=="Not provided"?r.number:r.student);setExpandedStudent(r.number&&r.number!=="Not provided"?r.number:r.student);setSection("Records");setQuery("");}
- function addWalkin(e){e.preventDefault();if(!walkIn.student.trim()||!walkIn.number.trim()){setNotice("Enter the student's name and student number first.");return;}const n=rows.filter(r=>r.type==="Walk-in").length+1;const row={id:`WALK-IN-${String(n).padStart(3,"0")}`,student:walkIn.student.trim(),number:walkIn.number.trim(),program:walkIn.program,product:walkIn.product,date:selectedDate,time:"Walk-in",type:"Walk-in",status:"Waiting"};setRows(old=>[row,...old]);setWalkIn({student:"",number:"",program:"BSIT",product:products[0]?.name||"Books"});setModal(null);setSection("Queue");setNotice("Walk-in added to today's queue. No ticket was created.");}
+  async function addWalkin(e) {
+    e.preventDefault();
+    if (!walkIn.student.trim() || !walkIn.number.trim()) {
+      setNotice("Enter the student's name and student number first.");
+      return;
+    }
+
+    try {
+      const saved = await createAppointment({
+        officeCode: "BAU",
+        service: walkIn.product,
+        date: selectedDate,
+        time: "Walk-in",
+        student: { name: walkIn.student.trim(), program: walkIn.program },
+        feeText: "Walk-in counter",
+      });
+
+      const newRow = {
+        dbId: saved.id,
+        id: saved.controlNumber || `WALK-IN-${String(rows.length + 1).padStart(3, "0")}`,
+        student: walkIn.student.trim(),
+        number: walkIn.number.trim(),
+        program: walkIn.program,
+        product: walkIn.product,
+        date: selectedDate,
+        time: "Walk-in",
+        type: "Walk-in",
+        status: "Waiting",
+      };
+
+      setRows((old) => [newRow, ...old]);
+      setWalkIn({ student: "", number: "", program: "BSIT", product: products[0]?.name || "Books" });
+      setModal(null);
+      setSection("Queue");
+      setNotice("Walk-in added to today's queue and saved to database.");
+    } catch (err) {
+      setNotice("Failed to save walk-in: " + err.message);
+    }
+  }
  function exportCSV(){const csv=["Control number,Student,Student number,Program,Service,Date,Time,Type,Status",...rows.map(r=>[r.id,r.student,r.number,r.program,r.product,r.date,r.time,r.type,r.status].map(v=>`"${String(v).replaceAll('"','""')}"`).join(","))].join("\n");const url=URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8;"}));const a=document.createElement("a");a.href=url;a.download="bau-report.csv";a.click();URL.revokeObjectURL(url);setNotice("Report exported as CSV.");}
  function table(list,actions=false){return <div className="misu-table-wrap"><table className="misu-table"><thead><tr><th>Control no.</th><th>Student</th><th>Service</th><th>Date / time</th><th>Type</th><th>Status</th>{actions&&<th>Action</th>}</tr></thead><tbody>{list.map(r=><tr key={r.id}><td>{r.id}</td><td><button className="misu-student-link" onClick={()=>openStudent(r)}>{r.student}</button><small>{r.number} · {r.program}</small></td><td>{r.product}</td><td>{r.date}<small>{r.time}</small></td><td>{r.type}</td><td><span className={`misu-badge ${badgeClass(r.status)}`}>{r.status}</span></td>{actions&&<td><div className="misu-row-actions">{!closedStatuses.includes(r.status)&&<button className="misu-btn small" onClick={()=>setModal({type:"verify",row:r})}>Verify / mark served</button>}{!closedStatuses.includes(r.status)&&<button className="misu-btn small outline" onClick={()=>updateStatus(r.id,"No-show")}>No-show</button>}</div></td>}</tr>)}</tbody></table>{!list.length&&<p className="bau-empty">No appointments match these filters.</p>}</div>}
  return <div className="misu-shell bau-shell"><Navbar accountType="bau-admin" adminSection={section==="Records"?"Reports":section} onAdminNavigate={item=>{setSection(item);setNotice("");setQuery("");}}/><main className="misu-main"><header className="misu-heading"><div><p className="misu-eyebrow">BUSINESS AFFAIRS UNIT</p><h1>{section==="Queue"?"Today's queue":section==="Requests"?"Online requests":section==="Products"?"Products":section==="Slots"?"Slot management":section==="Records"?"Student records":section}</h1><p className="muted">Manage BAU bookings, product requests, pickups, and daily capacity.</p></div><label className="bau-date">Working date<input type="date" value={selectedDate} onChange={e=>e.target.value&&setSelectedDate(e.target.value)}/></label></header>

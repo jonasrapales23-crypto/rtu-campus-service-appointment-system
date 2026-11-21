@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { createAppointment, fetchAdminAppointments, updateAdminStatus } from "../../services/appointments.js";
 import Navbar from "../../navbar/Navbar.jsx";
 import ConfirmItemReadyModal from "../components/ConfirmItemReadyModal.jsx";
 import VerifyAtCounterModal from "../components/VerifyAtCounterModal.jsx";
@@ -19,10 +20,74 @@ const sections=["Dashboard","Queue","Requests","Records","Services","Reports"];
 const doneStatuses=["Served","Claimed","Done","No-show"];
 const badgeClass=(s)=>s.toLowerCase().replaceAll(" ","-");
 export default function MisuAdmin(){
- const [section,setSection]=useState("Dashboard"); const [rows,setRows]=useState(seed); const [services,setServices]=useState(defaultServices); const [query,setQuery]=useState(""); const [recordQuery,setRecordQuery]=useState(""); const [modal,setModal]=useState(null); const [draft,setDraft]=useState({student:"",number:"",program:"BSIT",service:"Registration form"}); const [notice,setNotice]=useState(""); const [checks,setChecks]=useState(false); const [appointmentFilters,setAppointmentFilters]=useState({date:"All dates",status:"All statuses",service:"All services",type:"All types"}); const [queueFilters,setQueueFilters]=useState({status:"All statuses",service:"All services",type:"All types"}); const [selectedStudentNumber,setSelectedStudentNumber]=useState("");
+ const [rows, setRows] = useState([]);
+
+  useEffect(() => {
+    fetchAdminAppointments("MISU").then((liveData) => {
+      // Map "Booked" to "Online request" so MISU's specific filter tabs work automatically
+      const formatted = liveData.map((r) => ({
+        ...r,
+        type: r.type === "Walk-in" ? "Walk-in" : "Online request",
+      }));
+      setRows(formatted);
+    });
+  }, []);
+ const [services,setServices]=useState(defaultServices); const [query,setQuery]=useState(""); const [recordQuery,setRecordQuery]=useState(""); const [modal,setModal]=useState(null); const [draft,setDraft]=useState({student:"",number:"",program:"BSIT",service:"Registration form"}); const [notice,setNotice]=useState(""); const [checks,setChecks]=useState(false); const [appointmentFilters,setAppointmentFilters]=useState({date:"All dates",status:"All statuses",service:"All services",type:"All types"}); const [queueFilters,setQueueFilters]=useState({status:"All statuses",service:"All services",type:"All types"}); const [selectedStudentNumber,setSelectedStudentNumber]=useState("");
  const latestDate=rows.map(r=>r.date).sort().at(-1)||"2026-10-27"; const weekStartDate=new Date(`${latestDate}T00:00:00`); weekStartDate.setDate(weekStartDate.getDate()-6); const weekStart=weekStartDate.toISOString().slice(0,10); const weekRows=rows.filter(r=>r.date>=weekStart&&r.date<=latestDate); const today=rows.filter(r=>r.date===latestDate); const active=today.filter(r=>!doneStatuses.includes(r.status)); const pending=rows.filter(r=>["Submitted","Processing"].includes(r.status)); const hourList=[8,9,10,11,13,14,15,16]; const hourCounts=hourList.map(h=>({hour:h,count:weekRows.filter(r=>{const m=r.time.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);if(!m)return false;let n=Number(m[1])%12;if(m[3].toUpperCase()==="PM")n+=12;return n===h;}).length})); const maxHourCount=Math.max(1,...hourCounts.map(x=>x.count)); const filtered=rows.filter(r=>`${r.id} ${r.student} ${r.number} ${r.service}`.toLowerCase().includes(query.toLowerCase()));
- function update(id,status){setRows(old=>old.map(r=>r.id===id?{...r,status}:r));setNotice(`${id} updated to ${status}. `);setModal(null);setChecks(false)}
- function addWalkin(e){e.preventDefault();if(!draft.student.trim()){setNotice("Enter the student's name first.");return}const n=rows.filter(r=>r.type==="Walk-in").length+1;setRows(old=>[{id:`WALK-IN-${String(n).padStart(3,"0")}`,student:draft.student.trim(),number:draft.number||"Not provided",program:draft.program,service:draft.service,date:"2026-10-27",time:"Walk-in",type:"Walk-in",status:"Waiting",receiver:draft.student.trim()},...old]);setDraft({student:"",number:"",program:"BSIT",service:"Registration form"});setModal(null);setSection("Queue");setNotice("Walk-in added to the queue.")}
+  async function update(id, status) {
+    const target = rows.find((r) => r.id === id);
+    if (target?.dbId) {
+      await updateAdminStatus(target.dbId, status, "MISU Admin");
+    }
+    setRows((old) => old.map((r) => (r.id === id ? { ...r, status } : r)));
+    setNotice(`${id} updated to ${status}.`);
+    setModal(null);
+    setChecks(false);
+  }
+
+  async function addWalkin(e) {
+    e.preventDefault();
+    if (!draft.student.trim()) {
+      setNotice("Enter the student's name first.");
+      return;
+    }
+
+    const todayStr = new Date().toISOString().slice(0, 10);
+
+    try {
+      const saved = await createAppointment({
+        officeCode: "MISU",
+        service: draft.service,
+        date: todayStr,
+        time: "Walk-in",
+        student: { name: draft.student.trim(), program: draft.program },
+        feeText: "Walk-in counter",
+      });
+
+      const newRow = {
+        dbId: saved.id,
+        id: saved.controlNumber || `WALK-IN-${String(rows.length + 1).padStart(3, "0")}`,
+        student: draft.student.trim(),
+        number: draft.number || "Not provided",
+        program: draft.program,
+        service: draft.service,
+        date: todayStr,
+        time: "Walk-in",
+        type: "Walk-in",
+        status: "Waiting",
+        receiver: draft.student.trim(),
+      };
+
+      setRows((old) => [newRow, ...old]);
+      setDraft({ student: "", number: "", program: "BSIT", service: "Registration form" });
+      setModal(null);
+      setSection("Queue");
+      setNotice("Walk-in added to the queue and saved to database.");
+    } catch (err) {
+      setNotice("Failed to save walk-in: " + err.message);
+    }
+  }
+
  function action(r){if(r.status==="Waiting") {update(r.id,"Served");return} if(r.status==="Submitted"){update(r.id,"Processing");return} if(r.status==="Processing"){setModal({type:"ready",row:r});return} if(r.status==="Ready for pickup"){setModal({type:"verify",row:r});return}}
  function openStudent(r){setRecordQuery(r.number && r.number!=="Not provided" ? r.number : r.student);setSelectedStudentNumber(r.number && r.number!=="Not provided" ? r.number : r.student);setSection("Records")}
  function table(list,withAction=false){return <div className="misu-table-wrap"><table className="misu-table"><thead><tr><th>Control no.</th><th>Student</th><th>Service</th><th>Type / Time</th><th>Status</th>{withAction&&<th>Action</th>}</tr></thead><tbody>{list.map(r=><tr key={r.id}><td>{r.id}</td><td><button className="misu-student-link" onClick={()=>openStudent(r)}>{r.student}</button><small>{r.number}</small></td><td>{r.service}</td><td>{r.type}<small>{r.time}</small></td><td><span className={`misu-badge ${badgeClass(r.status)}`}>{r.status}</span></td>{withAction&&<td className="misu-row-actions">{section==="Requests"&&<button className="misu-btn small outline" onClick={()=>setModal({type:"details",row:r})}>Details</button>} {!doneStatuses.includes(r.status)&&<button className="misu-btn small" onClick={()=>action(r)}>{r.status==="Waiting"?"Mark served":r.status==="Submitted"?"Start":r.status==="Processing"?"Mark ready":r.status==="Ready for pickup"?"Verify":"—"}</button>}</td>}</tr>)}</tbody></table></div>}

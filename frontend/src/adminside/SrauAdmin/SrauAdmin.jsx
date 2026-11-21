@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { createAppointment, fetchAdminAppointments, updateAdminStatus } from "../../services/appointments.js";
 import "./SrauAdmin.css";
 import Navbar from "../../navbar/Navbar.jsx";
 import CalendarSlotManagement from "../CalendarSlotManagement/CalendarSlotManagement.jsx";
@@ -19,9 +20,18 @@ const initialSlots = times.map((time) => ({ time, capacity: time === "1:30 PM" ?
 export default function SrauAdmin() {
   const [section, setSection] = useState("Dashboard");
   const [reportsView, setReportsView] = useState("Reports");
-  const [appointments, setAppointments] = useState(initialAppointments);
+  const [appointments, setAppointments] = useState([]);
   const [services, setServices] = useState(initialServices);
-  const [selectedDate, setSelectedDate] = useState("2026-10-27");
+  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+
+  useEffect(() => {
+    fetchAdminAppointments("SRAU").then((liveData) => {
+      setAppointments(liveData);
+      if (liveData.length > 0 && !liveData.some((a) => a.date === selectedDate)) {
+        setSelectedDate(liveData[0].date);
+      }
+    });
+  }, []);
   const { slots, setSlots, dayStatus } = useDailySlots({ template: initialSlots, rows: appointments, selectedDate });
   const [dateFilter, setDateFilter] = useState("");
   const [query, setQuery] = useState("");
@@ -63,20 +73,59 @@ export default function SrauAdmin() {
   const fullSlots = slots.filter((slot) => !slot.closed && slot.capacity > 0 && slot.booked >= slot.capacity);
 
   function announce(message) { setNotice(message); }
-  function updateStatus(id, status) {
-    setAppointments((old) => old.map((item) => item.id === id ? { ...item, status } : item));
-    setSelectedAppointment((old) => old?.id === id ? { ...old, status } : old);
-    announce(`${id.startsWith("WALK-IN") ? "Walk-in" : "Appointment"} marked ${status.toLowerCase()}. `);
+  async function updateStatus(id, status) {
+    const target = appointments.find((item) => item.id === id);
+    if (target?.dbId) {
+      await updateAdminStatus(target.dbId, status, "SRAU Admin");
+    }
+    setAppointments((old) => old.map((item) => (item.id === id ? { ...item, status } : item)));
+    setSelectedAppointment((old) => (old?.id === id ? { ...old, status } : old));
+    announce(`${id.startsWith("WALK-IN") ? "Walk-in" : "Appointment"} marked ${status.toLowerCase()}.`);
   }
-  function addWalkIn(event) {
+
+   async function addWalkIn(event) {
     event.preventDefault();
     if (!walkIn.student.trim() || !walkIn.number.trim() || !walkIn.program || !walkIn.service) {
-      announce("Complete the student name, student number, program, and service first."); return;
+      announce("Complete the student name, student number, program, and service first.");
+      return;
     }
-    const id = `WALK-IN-${String(appointments.filter((a) => a.type === "Walk-in").length + 1).padStart(3, "0")}`;
-    setAppointments((old) => [{ id, short: "—", student: walkIn.student.trim(), number: walkIn.number.trim(), program: walkIn.program, service: walkIn.service, date: selectedDate, time: "Walk-in", type: "Walk-in", status: "Processing" }, ...old]);
-    setWalkIn({ student: "", number: "", program: "", service: "CTC / Authentication" }); setModal(""); setSection("Queue"); announce("Walk-in added to today's queue. No ticket was created.");
+
+    try {
+      const saved = await createAppointment({
+        officeCode: "SRAU",
+        service: walkIn.service,
+        date: selectedDate,
+        time: "Walk-in",
+        student: { name: walkIn.student.trim(), program: walkIn.program },
+        feeText: "Walk-in counter",
+      });
+
+      const id = saved.controlNumber || `WALK-IN-${String(appointments.filter((a) => a.type === "Walk-in").length + 1).padStart(3, "0")}`;
+      setAppointments((old) => [
+        {
+          dbId: saved.id,
+          id,
+          short: "—",
+          student: walkIn.student.trim(),
+          number: walkIn.number.trim(),
+          program: walkIn.program,
+          service: walkIn.service,
+          date: selectedDate,
+          time: "Walk-in",
+          type: "Walk-in",
+          status: "Processing",
+        },
+        ...old,
+      ]);
+      setWalkIn({ student: "", number: "", program: "", service: "CTC / Authentication" });
+      setModal("");
+      setSection("Queue");
+      announce("Walk-in added to today's queue and saved to database.");
+    } catch (err) {
+      announce("Failed to save walk-in: " + err.message);
+    }
   }
+
   function showAppointment(item) {
     if (normalizeStatus(item.status) !== "ready for pickup") {
       announce("This request can only be reviewed after it has been marked Ready for pickup.");

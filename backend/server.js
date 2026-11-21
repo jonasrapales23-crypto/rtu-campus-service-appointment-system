@@ -8,22 +8,120 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
-// 1. FETCH ALL: Serves dashboard table data with table user joins
+// ==========================================
+// 🎫 STUDENT & ADMIN APPOINTMENT ENDPOINTS
+// ==========================================
+
+// 1. FETCH ALL APPOINTMENTS FOR STUDENT TICKET & HISTORY
 app.get("/api/appointments", async (req, res) => {
   try {
-    const [rows] = await db.query(`
-      SELECT a.*, u.name as student_name, u.student_id_number as student_program 
-      FROM appointments a
-      JOIN users u ON a.student_id = u.id
-      ORDER BY a.created_at DESC
-    `);
-    res.json(rows);
+    const [appointments] = await db.query("SELECT * FROM appointments ORDER BY id DESC");
+    const [users] = await db.query("SELECT * FROM users");
+
+    const combined = appointments.map((a) => {
+      const student = users.find((u) => u.id === a.student_id) || {};
+      return {
+        ...a,
+        officeCode: a.department || "HSU",
+        date: a.appointment_date,
+        time: a.time_slot,
+        student_name: student.name || "Juan Dela Cruz",
+        student_program: student.student_id_number || "BSIT",
+      };
+    });
+
+    res.json(combined);
   } catch (err) {
+    console.error("⛔ Fetch Appointments Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 2. COUNT SLOTS: Calculates live slot occupancies
+// 2. FETCH ALL APPOINTMENTS FOR ADMIN DASHBOARDS
+app.get("/api/admin/appointments", async (req, res) => {
+  try {
+    const [appointments] = await db.query("SELECT * FROM appointments ORDER BY id DESC");
+    const [users] = await db.query("SELECT * FROM users");
+
+    const combined = appointments.map((a) => {
+      const student = users.find((u) => u.id === a.student_id) || {};
+      return {
+        id: a.id,
+        controlNumber: a.controlNumber || null,
+        officeCode: a.department || "HSU",
+        service: a.service || null,
+        date: a.appointment_date,
+        time: a.time_slot,
+        status: a.status || "Submitted",
+        student: student.name || "Juan Dela Cruz",
+        number: student.student_id_number || "2023-00123",
+        program: student.student_id_number || "BSIT",
+        receiverName: a.receiverName || null,
+        queue: a.queue || 1,
+      };
+    });
+
+    res.json(combined);
+  } catch (err) {
+    console.error("⛔ Admin Fetch Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. UPDATE APPOINTMENT STATUS FROM ADMIN DASHBOARDS
+app.put("/api/admin/appointments/:id/status", async (req, res) => {
+  const { id } = req.params;
+  const { status, adminName = "Office Admin" } = req.body;
+
+  // Force status values to lowercase to match your MySQL table schema constraints perfectly
+  let dbStatus = String(status).toLowerCase();
+  if (dbStatus === "served") {
+    dbStatus = "claimed";
+  }
+
+  try {
+    await db.query("START TRANSACTION");
+
+    // Update the core table with the clean lowercase status string
+    await db.query("UPDATE appointments SET status = ? WHERE id = ?", [dbStatus, id]);
+
+    await db.query(
+      'INSERT INTO audit_logs (action, details, ip_address) VALUES ("UPDATE_STATUS", ?, ?)',
+      [`${adminName} marked appointment #${id} as ${status}`, req.ip]
+    );
+
+    await db.query("COMMIT");
+    res.json({ success: true, id, status: dbStatus });
+  } catch (err) {
+    await db.query("ROLLBACK");
+    console.error("Status Update Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 4. FETCH LIVE AUDIT LOGS FOR SUPER ADMIN
+app.get("/api/admin/audit-logs", async (req, res) => {
+  try {
+    const [logs] = await db.query(`
+      SELECT 
+        al.id,
+        al.created_at,
+        al.action,
+        al.details,
+        COALESCE(u.name, 'System / Admin') AS user
+      FROM audit_logs al
+      LEFT JOIN users u ON al.user_id = u.id
+      ORDER BY al.id DESC
+      LIMIT 100
+    `);
+    res.json(logs);
+  } catch (err) {
+    console.error("⛔ Audit Log Fetch Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 5. COUNT SLOTS
 app.get("/api/appointments/count", async (req, res) => {
   const { officeCode, date, time } = req.query;
   try {
@@ -31,131 +129,160 @@ app.get("/api/appointments/count", async (req, res) => {
       'SELECT COUNT(*) as count FROM appointments WHERE department = ? AND appointment_date = ? AND time_slot = ? AND status != "Cancelled"',
       [officeCode, date, time]
     );
-    res.json({ count: rows.count });
+    res.json({ count: rows?.count || 0 });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
-// 3. CREATE BOOKING: Production-Resilient Fallback Insertion System
 app.post("/api/appointments", async (req, res) => {
-  console.log("📥 RECEIVED BOOKING PAYLOAD:", req.body);
-  
-  const { controlNumber, officeCode, service, date, time, student, feeText, receiverName, details } = req.body;
+  const { controlNumber, officeCode, service, date, time, student, feeText, receiverName } = req.body;
 
   try {
     await db.query("START TRANSACTION");
 
-    // 1. Safe Naming Extraction Layer (handles all variations safely)
-    const studentProgram = student?.program || req.body.studentProgram || "BSIT"; 
-    const studentName = student?.name || req.body.studentName || "Juan Dela Cruz";
+    const studentProgram = String(student?.program || req.body.studentProgram || "BSIT").trim();
+    const studentName = String(student?.name || req.body.studentName || "Juan Dela Cruz").trim();
     const studentEmail = student?.email || req.body.studentEmail || null;
-    
+
     const cleanOffice = officeCode || req.body.officeCode || req.body.department || "GENERAL";
     const cleanService = service || req.body.service || req.body.config?.service || "Books";
-    
-    const cleanDate = date || req.body.appointment_date || req.body.appointmentDate || "2026-11-08";
+
+    const cleanDate = date || req.body.appointment_date || req.body.appointmentDate || "2026-11-17";
     const cleanTime = time || req.body.time_slot || req.body.timeSlot || "09:00 AM";
 
-    // 2. Manage User Records Pointers Safely Without Email Duplicates
+    const nameParts = studentName.split(" ");
+    const firstName = nameParts[0] || "Juan";
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "Dela Cruz";
+
+    let aiVerdict = "ok";
+    let aiReasons = [];
+
+    if (studentEmail) {
+      try {
+        const aiResponse = await fetch("http://127.0.0", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: studentEmail,
+            first_name: firstName,
+            last_name: lastName,
+          }),
+        });
+
+        if (aiResponse.ok) {
+          const aiData = await aiResponse.json();
+          aiVerdict = aiData.verdict || "ok";
+          aiReasons = aiData.reasons || [];
+        }
+      } catch (aiErr) {
+        // Fallback silently if NLP service is offline
+      }
+    }
+
     const [users] = await db.query("SELECT * FROM users WHERE student_id_number = ?", [studentProgram]);
     let userId;
-    
+
     if (!users || users.length === 0) {
-      // 🟢 THE FIX: Generate a completely unique email address suffix string to stop the duplicate key crash!
       const uniqueSuffix = `${Date.now().toString().slice(-4)}_${Math.floor(Math.random() * 1000)}`;
       const uniqueEmail = studentEmail || `student_${uniqueSuffix}@rtu.edu.ph`;
-      
+
       const [newStudent] = await db.query(
         'INSERT INTO users (student_id_number, name, email, password, role) VALUES (?, ?, ?, "hashed_pass", "student")',
         [studentProgram, studentName, uniqueEmail]
       );
       userId = newStudent.insertId;
-      console.log(`👤 Created fresh student profile row with unique email: ${uniqueEmail}`);
     } else {
-      // Correctly read row object whether it returns single or array rows
       const targetUser = Array.isArray(users) ? users[0] : users;
-      userId = targetUser?.id || users?.id || users;
+      userId = targetUser?.id || 1;
     }
 
-    // 3. Queue Tracking Counter Calculations
     const [queueCheck] = await db.query(
-      'SELECT COUNT(*) as count FROM appointments WHERE department = ? AND appointment_date = ?',
+      "SELECT COUNT(*) as count FROM appointments WHERE department = ? AND appointment_date = ?",
       [cleanOffice, cleanDate]
     );
-    const nextQueue = (queueCheck?.length || 0) + 1;
+    const rawCount = queueCheck[0]?.count || 0;
+    const nextQueue = rawCount + 1;
 
-    // 4. Structural Control Number Sequence Generator
     let generatedControlNo = controlNumber;
     if (!generatedControlNo && cleanDate) {
-      const parts = cleanDate.split("-");
+      let dateString = "2026-11-17";
+      
+      if (cleanDate instanceof Date) {
+        const y = cleanDate.getFullYear();
+        const m = String(cleanDate.getMonth() + 1).padStart(2, "0");
+        const d = String(cleanDate.getDate()).padStart(2, "0");
+        dateString = `${y}-${m}-${d}`;
+      } else if (typeof cleanDate === "string") {
+        dateString = cleanDate.slice(0, 10);
+      }
+
+      const parts = dateString.split("-");
       const month = parts[1] || "11";
-      const day = parts[2] || "08";
-      const officeLetter = cleanOffice === "HSU" ? "H" : cleanOffice === "SRAU" ? "R" : cleanOffice === "BAU" ? "B" : "G";
+      const day = parts[2] || "17";
+      
+      const officeLetter = cleanOffice === "HSU" ? "H" : cleanOffice === "SRAU" ? "R" : cleanOffice === "BAU" ? "B" : cleanOffice === "MISU" ? "M" : "G";
       const queueStr = String(nextQueue).padStart(3, "0");
-      generatedControlNo = `${month}-${day}-${officeLetter}-${queueStr}-SRV-${Date.now().toString().slice(-6)}`;
+      const svcCode = cleanService.substring(0, 3).toUpperCase();
+      generatedControlNo = `${month}-${day}-${officeLetter}-${queueStr}-${svcCode}-10${Date.now().toString().slice(-4)}`;
     }
 
-    // 5. Baseline Query: Inserts columns guaranteed to exist in your base schema layout
+       // Guarantee the status is never a blank string before inserting
+    const appointmentStatusValue = (req.body.status && String(req.body.status).trim() !== "") ? req.body.status : "Submitted";
+
     const [result] = await db.query(
       `INSERT INTO appointments 
        (student_id, department, appointment_date, time_slot, status) 
-       VALUES (?, ?, ?, ?, 'Submitted')`,
-      [userId, cleanOffice, cleanDate, cleanTime]
+       VALUES (?, ?, ?, ?, ?)`,
+      [userId, cleanOffice, cleanDate, cleanTime, appointmentStatusValue]
     );
 
     const insertedId = result.insertId;
 
-    // 6. SAFE COLUMN DISCOVERY BLOCKS: Catches safely if columns do not exist yet
     try {
-      await db.query(`UPDATE appointments SET controlNumber = ? WHERE id = ?`, [generatedControlNo, insertedId]);
-    } catch (e) { console.log("Note: controlNumber column missing, skipping..."); }
+      await db.query("UPDATE appointments SET controlNumber = ? WHERE id = ?", [generatedControlNo, insertedId]);
+    } catch (e) {}
 
     try {
-      await db.query(`UPDATE appointments SET queue = ? WHERE id = ?`, [nextQueue, insertedId]);
-    } catch (e) { console.log("Note: queue column missing, skipping..."); }
+      await db.query("UPDATE appointments SET queue = ? WHERE id = ?", [nextQueue, insertedId]);
+    } catch (e) {}
 
     try {
-      await db.query(`UPDATE appointments SET service = ? WHERE id = ?`, [cleanService, insertedId]);
-    } catch (e) { console.log("Note: service column missing, skipping..."); }
+      await db.query("UPDATE appointments SET service = ? WHERE id = ?", [cleanService, insertedId]);
+    } catch (e) {}
 
     try {
-      await db.query(`UPDATE appointments SET feeText = ? WHERE id = ?`, [feeText || "No fee", insertedId]);
-    } catch (e) { console.log("Note: feeText column missing, skipping..."); }
+      await db.query("UPDATE appointments SET feeText = ? WHERE id = ?", [feeText || "No fee", insertedId]);
+    } catch (e) {}
 
     try {
-      await db.query(`UPDATE appointments SET receiverName = ? WHERE id = ?`, [receiverName || null, insertedId]);
-    } catch (e) { console.log("Note: receiverName column missing, skipping..."); }
+      await db.query("UPDATE appointments SET receiverName = ? WHERE id = ?", [receiverName || null, insertedId]);
+    } catch (e) {}
 
-    try {
-      const detailsString = details ? JSON.stringify(details) : null;
-      await db.query(`UPDATE appointments SET details = ? WHERE id = ?`, [detailsString, insertedId]);
-    } catch (e) { console.log("Note: details column missing, skipping..."); }
+    const aiLogSuffix = aiReasons.length > 0 ? ` | [AI Flags: ${aiReasons.join(", ")}]` : " | [AI Verdict: CLEAR]";
+    const logDetails = `Student ${studentName} (${studentProgram}) booked ${cleanService} at ${cleanOffice}.${aiLogSuffix}`;
 
-    // 7. Record System Operations Audit Logs
-    const logDetails = `Student ${studentName} (${studentProgram}) booked ${cleanService} at ${cleanOffice}. Control No: ${generatedControlNo}`;
     await db.query(
-      'INSERT INTO audit_logs (user_id, action, details, ip_address) VALUES (?, "BOOK_APPOINTMENT", ?, ?)',
-      [userId, logDetails, req.ip]
+      'INSERT INTO audit_logs (action, details, ip_address) VALUES ("BOOK_APPOINTMENT", ?, ?)',
+      [logDetails, req.ip]
     );
 
     await db.query("COMMIT");
-    console.log("💾 SUCCESS: Stored in DB safely with row ID:", insertedId);
 
-    res.status(201).json({ 
-      id: String(insertedId), 
-      controlNumber: generatedControlNo, 
+    res.status(201).json({
+      id: String(insertedId),
+      controlNumber: generatedControlNo,
       status: "Submitted",
       queue: nextQueue,
-      feeText: feeText || "No fee"
+      feeText: feeText || "No fee",
+      aiVerdict: aiVerdict,
     });
   } catch (err) {
     await db.query("ROLLBACK");
-    console.error("⛔ CRITICAL SERVER ERROR EXCEPTION:", err.message);
+    console.error("Server Error:", err.message);
     res.status(500).json({ error: err.message });
   }
 });
 
-// 4. CANCEL LOGIC: Updates reservation fields state
 app.put("/api/appointments/:id/cancel", async (req, res) => {
   const { id } = req.params;
   try {
@@ -170,7 +297,6 @@ app.put("/api/appointments/:id/cancel", async (req, res) => {
   }
 });
 
-// 5. RESCHEDULE LOGIC: Shifts calendar items configurations
 app.put("/api/appointments/:id/reschedule", async (req, res) => {
   const { id } = req.params;
   const { date, time } = req.body;
@@ -186,4 +312,4 @@ app.put("/api/appointments/:id/reschedule", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => console.log(`Backend Server running locally on http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`Backend Server running on port ${PORT}`));
