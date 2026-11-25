@@ -15,7 +15,7 @@ function formatAppointment(item) {
   if (item.appointment_date || item.date) {
     const fallbackDate = item.appointment_date || item.date;
     if (typeof fallbackDate === "string") {
-      rawDate = fallbackDate.split("T")[0];
+       rawDate = fallbackDate.split("T")[0];
     } else if (fallbackDate instanceof Date && !isNaN(fallbackDate.getTime())) {
       const y = fallbackDate.getFullYear();
       const m = String(fallbackDate.getMonth() + 1).padStart(2, "0");
@@ -24,9 +24,20 @@ function formatAppointment(item) {
     }
   }
 
-  const resolvedTime = item.time_slot || item.time || "09:00 AM";
+    const resolvedTime = item.time_slot || item.time || "09:00 AM";
   const dbRowId = String(item.id || 1);
-  const activeOffice = item.department || item.officeCode || "HSU";
+
+  /* Extract incoming database office codes */
+  let initialOffice = item.department || item.officeCode;
+  const currentServiceText = String(item.service || "").toLowerCase().trim();
+
+  /* Automatically route new MISU services to prevent them from falling back to HSU */
+  if (currentServiceText.includes("receipt") || currentServiceText.includes("grade") || currentServiceText.includes("registration") || currentServiceText.includes("student id")) {
+    initialOffice = "MISU";
+  }
+
+  /* Preserve original fallback baseline defaults for other units */
+  const activeOffice = initialOffice || "HSU";
 
   const cachedService = sessionStorage.getItem("last_booked_service");
   let cleanService = item.service;
@@ -74,6 +85,12 @@ function formatAppointment(item) {
                            currentStatus === "cancelled" ? "Cancelled" :
                            currentStatus === "no-show" ? "No-show" : "Submitted";
 
+  // Professional mapping layer to enforce numeric PHP currency styling across frontend user views
+  const incomingFee = item.feeText || item.fee || "0.00";
+  const cleanNumericString = String(incomingFee).replace(/[^0-9.]/g, "");
+  const parsedPriceFloat = parseFloat(cleanNumericString);
+  const formattedFeeOutput = !isNaN(parsedPriceFloat) ? `₱${parsedPriceFloat.toFixed(2)}` : "₱0.00";
+
   return {
     ...item,
     id: dbRowId,
@@ -85,7 +102,7 @@ function formatAppointment(item) {
     time: resolvedTime,
     status: normalizedStatus,
     queue: item.queue || 1,
-    feeText: item.feeText || (activeOffice === "HSU" ? "No payment required" : "No fee"),
+    feeText: formattedFeeOutput,
     receiverName: item.receiverName || "",
     student: {
       name: item.student_name || item.student?.name || "Juan Dela Cruz",
@@ -212,11 +229,9 @@ export async function fetchAdminAppointments(targetOffice = null) {
         const officeLetter = office === "HSU" ? "H" : office === "SRAU" ? "R" : office === "BAU" ? "B" : "M";
         const svcCode = cleanService.substring(0, 3).toUpperCase();
         
-        // Use clean numeric ID strings safely mapped to resolve update target anomalies
         const displayId = row.controlNumber || `${month}-${day}-${officeLetter}-001-${svcCode}-10${String(row.id).padStart(4, "0")}`;
         const shortId = `…-${displayId.slice(-10)}`;
 
-        // Normalize case-sensitivity values for administrative tables badges
         const currentStatus = String(row.status || "").toLowerCase().trim();
         const adminStatus = (currentStatus === "claimed" || currentStatus === "served") ? "Served" :
                             currentStatus === "processing" ? "Processing" :
@@ -279,5 +294,30 @@ export async function fetchAuditLogs() {
   } catch (err) {
     console.error("Failed to fetch audit logs:", err);
     return [];
+  }
+}
+
+export async function fetchOfficeServices(officeCode) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/admin/services/${officeCode}`);
+    if (!response.ok) return [];
+    return await response.json();
+  } catch (err) {
+    console.error("Failed to fetch office services:", err);
+    return [];
+  }
+}
+
+export async function updateServiceFee(serviceId, feeText, adminName) {
+  try {
+    const response = await fetch(`${BACKEND_URL}/admin/services/${serviceId}/fee`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feeText, adminName }),
+    });
+    return await response.json();
+  } catch (err) {
+    console.error("Failed to update service fee:", err);
+    return null;
   }
 }
