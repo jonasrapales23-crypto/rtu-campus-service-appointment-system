@@ -12,7 +12,7 @@ app.use(express.json());
 // STUDENT & ADMIN APPOINTMENT ENDPOINTS
 // ==========================================
 
-// 1. FETCH ALL APPOINTMENTS FOR STUDENT TICKET & HISTORY (Normalized 3NF JOIN)
+// 1. FETCH ALL APPOINTMENTS FOR STUDENT TICKET & HISTORY
 app.get("/api/appointments", async (req, res) => {
   try {
     const [appointments] = await db.query(`
@@ -24,14 +24,17 @@ app.get("/api/appointments", async (req, res) => {
         a.status,
         a.queue,
         o.office_code AS officeCode,
-        s.service_name AS service,
-        s.fee_text AS feeText,
+        a.receiverName,
+        IFNULL(a.sub_service_text, s.service_name) AS service,
+        /* Dynamic price collector: pulls from sub_services child table if sub_service_text matches, else uses base category fee */
+        COALESCE(sub.fee_amount, s.fee_text) AS feeText,
         u.name AS student_name,
         u.student_id_number AS student_program
       FROM appointments a
       LEFT JOIN services s ON a.service_id = s.id
       LEFT JOIN offices o ON s.office_id = o.id
       LEFT JOIN users u ON a.student_id = u.id
+      LEFT JOIN sub_services sub ON a.service_id = sub.service_id AND sub.sub_service_name = a.sub_service_text
       ORDER BY a.id DESC
     `);
     res.json(appointments);
@@ -41,7 +44,7 @@ app.get("/api/appointments", async (req, res) => {
   }
 });
 
-// 2. FETCH ALL APPOINTMENTS FOR ADMIN DASHBOARDS (Normalized 3NF JOIN)
+// 2. FETCH ALL APPOINTMENTS FOR ADMIN DASHBOARDS
 app.get("/api/admin/appointments", async (req, res) => {
   try {
     const [appointments] = await db.query(`
@@ -54,7 +57,8 @@ app.get("/api/admin/appointments", async (req, res) => {
         a.queue,
         a.receiverName,
         o.office_code AS officeCode,
-        s.service_name AS service,
+        IFNULL(a.sub_service_text, s.service_name) AS service,
+        COALESCE(sub.fee_amount, s.fee_text) AS fee,
         u.name AS student,
         u.student_id_number AS number,
         u.student_id_number AS program
@@ -62,6 +66,7 @@ app.get("/api/admin/appointments", async (req, res) => {
       LEFT JOIN services s ON a.service_id = s.id
       LEFT JOIN offices o ON s.office_id = o.id
       LEFT JOIN users u ON a.student_id = u.id
+      LEFT JOIN sub_services sub ON a.service_id = sub.service_id AND sub.sub_service_name = a.sub_service_text
       ORDER BY a.id DESC
     `);
     res.json(appointments);
@@ -154,7 +159,7 @@ app.post("/api/appointments", async (req, res) => {
     const studentName = String(student?.name || req.body.studentName || "Juan Dela Cruz").trim();
     const studentEmail = student?.email || req.body.studentEmail || null;
 
-    const cleanOffice = officeCode || req.body.officeCode || req.body.department || "GENERAL";
+    let cleanOffice = officeCode || req.body.officeCode || req.body.department || "GENERAL";
     const cleanService = service || req.body.service || req.body.config?.service || "Books";
 
     const cleanDate = date || req.body.appointment_date || req.body.appointmentDate || "2026-11-23";
@@ -164,30 +169,15 @@ app.post("/api/appointments", async (req, res) => {
     const firstName = nameParts[0] || "Juan";
     const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1] : "Dela Cruz";
 
-    let aiVerdict = "ok";
-    let aiReasons = [];
-
     // Optional Python machine learning service loop connection checker
     if (studentEmail) {
       try {
-        const aiResponse = await fetch("http://127.0.0", {
+        await fetch("http://127.0.0", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            email: studentEmail,
-            first_name: firstName,
-            last_name: lastName,
-          }),
+          body: JSON.stringify({ email: studentEmail, first_name: firstName, last_name: lastName }),
         });
-
-        if (aiResponse.ok) {
-          const aiData = await aiResponse.json();
-          aiVerdict = aiData.verdict || "ok";
-          aiReasons = aiData.reasons || [];
-        }
-      } catch (aiErr) {
-        // Fallback silently if the external Python NLP engine is offline
-      }
+      } catch (aiErr) {}
     }
 
     // Resolve or generate user record configurations cleanly
@@ -208,9 +198,36 @@ app.post("/api/appointments", async (req, res) => {
       userId = targetUser?.id || users?.id || 1;
     }
 
-    // 3NF COMPLIANT RESOLUTION: Map text names to services lookup table primary IDs
-    const [serviceRows] = await db.query("SELECT id FROM services WHERE service_name = ?", [cleanService]);
-    const resolvedServiceId = serviceRows.length > 0 ? serviceRows[0].id : 1;
+    // Smart 3NF Relational Resolver Matrix
+    let resolvedServiceId = 1;
+    const [primaryServiceCheck] = await db.query("SELECT id FROM services WHERE service_name = ?", [cleanService]);
+    
+    if (primaryServiceCheck && primaryServiceCheck.length > 0) {
+      resolvedServiceId = primaryServiceCheck[0].id;
+    } else {
+      // Look up inside child sub_services mapping table if a direct primary title match hits zero records
+      const [childServiceCheck] = await db.query("SELECT service_id FROM sub_services WHERE sub_service_name = ?", [cleanService]);
+      if (childServiceCheck && childServiceCheck.length > 0) {
+        resolvedServiceId = childServiceCheck[0].service_id;
+      } else {
+        // Safe contextual catch-all text phrase matching routers
+        const lowercaseTitle = cleanService.toLowerCase();
+        if (lowercaseTitle.includes("receipt")) resolvedServiceId = 1;
+        else if (lowercaseTitle.includes("grade")) resolvedServiceId = 2;
+        else if (lowercaseTitle.includes("registration")) resolvedServiceId = 3;
+        else if (lowercaseTitle.includes("student id")) resolvedServiceId = 9;
+        else if (lowercaseTitle.includes("transcript")) resolvedServiceId = 4;
+        else if (lowercaseTitle.includes("certificate")) resolvedServiceId = 5;
+        else if (lowercaseTitle.includes("diploma")) resolvedServiceId = 6;
+        else if (lowercaseTitle.includes("authentication") || lowercaseTitle.includes("ctc")) resolvedServiceId = 15;
+        else resolvedServiceId = 10; // Default fallback maps firmly to BAU Books
+      }
+    }
+
+    // Force context realignment to sync database records correctly
+    if ([1, 2, 3, 9].includes(resolvedServiceId)) cleanOffice = "MISU";
+    else if ([4, 5, 6, 15].includes(resolvedServiceId)) cleanOffice = "SRAU";
+    else if ([10, 11, 12, 13, 14].includes(resolvedServiceId)) cleanOffice = "BAU";
 
     // Resolve current day totals to manage sequence queues safely
     const [queueCheck] = await db.query(
@@ -219,19 +236,11 @@ app.post("/api/appointments", async (req, res) => {
     );
     const rawCount = queueCheck?.[0]?.count || 0;
     const nextQueue = rawCount + 1;
-     // Construct structurally isolated reference control strings
+
+    // Construct structurally isolated reference control strings
     let generatedControlNo = controlNumber;
     if (!generatedControlNo && cleanDate) {
-      let dateString = "2026-11-23";
-      if (cleanDate instanceof Date) {
-        const y = cleanDate.getFullYear();
-        const m = String(cleanDate.getMonth() + 1).padStart(2, "0");
-        const d = String(cleanDate.getDate()).padStart(2, "0");
-        dateString = `${y}-${m}-${d}`;
-      } else if (typeof cleanDate === "string") {
-        dateString = cleanDate.slice(0, 10);
-      }
-
+      let dateString = typeof cleanDate === "string" ? cleanDate.slice(0, 10) : "2026-11-23";
       const parts = dateString.split("-");
       const month = parts[1] || "11";
       const day = parts[2] || "23";
@@ -244,46 +253,33 @@ app.post("/api/appointments", async (req, res) => {
 
     const appointmentStatusValue = (req.body.status && String(req.body.status).trim() !== "") ? req.body.status : "Submitted";
 
-    // Core table insert transaction writing reference foreign keys instead of text strings
+    // Core table insert transaction writing both the parent ID and the specific sub-service text description cleanly
     const [result] = await db.query(
       `INSERT INTO appointments 
-       (student_id, service_id, appointment_date, time_slot, status) 
-       VALUES (?, ?, ?, ?, ?)`,
-      [userId, resolvedServiceId, cleanDate, cleanTime, appointmentStatusValue]
+       (student_id, service_id, sub_service_text, appointment_date, time_slot, status) 
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [userId, resolvedServiceId, cleanService, cleanDate, cleanTime, appointmentStatusValue]
     );
 
     const insertedId = result.insertId;
 
-    // Synchronize optional tracking columns safely using dynamic fallback catch blocks
-    try {
-      await db.query("UPDATE appointments SET controlNumber = ? WHERE id = ?", [generatedControlNo, insertedId]);
-    } catch (e) {}
+    try { await db.query("UPDATE appointments SET controlNumber = ? WHERE id = ?", [generatedControlNo, insertedId]); } catch (e) {}
+    try { await db.query("UPDATE appointments SET queue = ? WHERE id = ?", [nextQueue, insertedId]); } catch (e) {}
+    try { await db.query("UPDATE appointments SET receiverName = ? WHERE id = ?", [receiverName || null, insertedId]); } catch (e) {}
 
-    try {
-      await db.query("UPDATE appointments SET queue = ? WHERE id = ?", [nextQueue, insertedId]);
-    } catch (e) {}
-
-    try {
-      await db.query("UPDATE appointments SET receiverName = ? WHERE id = ?", [receiverName || null, insertedId]);
-    } catch (e) {}
-
-    const aiLogSuffix = aiReasons.length > 0 ? ` | [AI Flags: ${aiReasons.join(", ")}]` : " | [AI Verdict: CLEAR]";
-    const logDetails = `Student ${studentName} (${studentProgram}) booked service ID ${resolvedServiceId}.${aiLogSuffix}`;
-
-    await db.query(
-      'INSERT INTO audit_logs (action, details, ip_address) VALUES ("BOOK_APPOINTMENT", ?, ?)',
-      [logDetails, req.ip]
-    );
+    const logDetails = `Student ${studentName} (${studentProgram}) booked service ID ${resolvedServiceId}. [Office: ${cleanOffice}]`;
+    await db.query('INSERT INTO audit_logs (action, details, ip_address) VALUES ("BOOK_APPOINTMENT", ?, ?)', [logDetails, req.ip]);
 
     await db.query("COMMIT");
 
     res.status(201).json({
       id: String(insertedId),
       controlNumber: generatedControlNo,
+      officeCode: cleanOffice,
+      service: cleanService,
       status: "Submitted",
       queue: nextQueue,
-      feeText: feeText || "No fee",
-      aiVerdict: aiVerdict,
+      feeText: feeText || "0.00",
     });
   } catch (err) {
     await db.query("ROLLBACK");
@@ -477,6 +473,58 @@ app.put("/api/admin/services/:serviceId/fee", async (req, res) => {
   } catch (err) {
     await db.query("ROLLBACK");
     console.error("Update Pricing Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// FETCH SUB-SERVICES WITH ACCURATE AVAILABILITY METRICS
+app.get("/api/admin/services/:serviceId/sub-services", async (req, res) => {
+  const { serviceId } = req.params;
+  try {
+    const [subServices] = await db.query(
+      "SELECT id, service_id, sub_service_name AS name, fee_amount AS fee, is_available AS available FROM sub_services WHERE service_id = ? ORDER BY id ASC",
+      [serviceId]
+    );
+    res.json(subServices);
+  } catch (err) {
+    console.error("Sub-Services Query Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// CREATE AND APPEND A NEW TEXTBOOK DIRECTLY INTO THE ACTIVE CHILD CATALOG MATRIX
+app.post("/api/admin/services/:serviceId/sub-services", async (req, res) => {
+  const { serviceId } = req.params;
+  const { name, fee } = req.body;
+  try {
+    const [result] = await db.query(
+      "INSERT INTO sub_services (service_id, sub_service_name, fee_amount, is_available) VALUES (?, ?, ?, 1)",
+      [serviceId, name, parseFloat(fee) || 0.00]
+    );
+    res.json({ success: true, id: result.insertId });
+  } catch (err) {
+    console.error("Insert Book Catalog Error:", err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// BATCH UPDATE AND SYNCHRONIZE BOTH PRICES AND AVAILABILITY STATUSES IN SINGLE MUTATION
+app.put("/api/admin/sub-services/batch", async (req, res) => {
+  const { items, adminName = "BAU Admin" } = req.body;
+  try {
+    await db.query("START TRANSACTION");
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      await db.query(
+        "UPDATE sub_services SET fee_amount = ?, is_available = ? WHERE id = ?",
+        [parseFloat(item.fee) || 0.00, item.available ? 1 : 0, item.id]
+      );
+    }
+    await db.query("COMMIT");
+    res.json({ success: true });
+  } catch (err) {
+    await db.query("ROLLBACK");
+    console.error("Batch Book Update Failure:", err.message);
     res.status(500).json({ error: err.message });
   }
 });

@@ -1,6 +1,6 @@
+import { useState, useEffect } from "react";
 import { createAppointment } from "../../services/appointments.js";
 import { currentStudent } from "../../data/student.js";
-import { useState } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
 import "../../styles/Srau.css";
@@ -61,7 +61,7 @@ function getMonthLabel(date) {
 function UploadBox({ title, note, file, onChange }) {
   return (
     <label className="srau-upload-box">
-      <span className="upload-icon" aria-hidden="true">📄 ↑</span>
+      <span className="upload-icon" aria-hidden="true">File Upload</span>
       <span>{title}</span>
       {file ? (
         <span className="upload-file-name">{file.name}</span>
@@ -75,6 +75,35 @@ function UploadBox({ title, note, file, onChange }) {
 }
 
 export default function Srau() {
+  const [liveTorLevels, setLiveTorLevels] = useState([]);
+  const [allBaseServices, setAllBaseServices] = useState([]);
+  const [stampFee, setStampFee] = useState(30.00);
+
+  useEffect(() => {
+    fetch("http://localhost:5000/api/admin/services/4/sub-services")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setLiveTorLevels(data.filter((item) => item.available === 1 || item.available === true));
+        }
+      })
+      .catch((err) => console.error("Database SRAU sub-services load error:", err));
+
+    fetch("http://localhost:5000/api/admin/services/SRAU")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setAllBaseServices(data);
+          const torParentRow = data.find(s => s.id === 4 || String(s.service_name).toLowerCase().includes("transcript"));
+          if (torParentRow) {
+            const rawStamp = parseFloat(torParentRow.fee_text || torParentRow.fee);
+            if (!isNaN(rawStamp)) setStampFee(rawStamp);
+          }
+        }
+      })
+      .catch((err) => console.error("Database master SRAU service lookup error:", err));
+  }, []);
+
   const [service, setService] = useState("Transcript of Records");
   const [torLevel, setTorLevel] = useState("College");
   const [validId, setValidId] = useState(null);
@@ -124,8 +153,7 @@ export default function Srau() {
     setSelectedDate(dateKey(date));
     setMessage("");
   }
-   // Full-stack asynchronous data-save submission handler
-  async function handleGenerateTicket() {
+    async function handleGenerateTicket() {
     setMessage("");
 
     if (!validId || !requiredDocument) {
@@ -148,17 +176,30 @@ export default function Srau() {
     try {
       setMessage("Connecting to backend database...");
       
+      let absoluteTotalPriceText = "0.00";
+      const targetServiceText = service === "Transcript of Records" ? `Transcript of Records (${torLevel})` : service;
+
+      if (service === "Transcript of Records") {
+        const currentLevelMatch = liveTorLevels.find(l => l.name.toLowerCase().includes(torLevel.toLowerCase()));
+        const subServicePrice = currentLevelMatch ? parseFloat(currentLevelMatch.fee) : 150.00;
+        absoluteTotalPriceText = String((subServicePrice + stampFee).toFixed(2));
+      } else {
+        const matchedRow = allBaseServices.find(s => String(s.service_name).toLowerCase().trim() === String(service).toLowerCase().trim());
+        const activePrice = matchedRow ? parseFloat(matchedRow.fee_text || matchedRow.fee) : 150.00;
+        absoluteTotalPriceText = String(activePrice.toFixed(2));
+      }
+
       const appointment = await createAppointment({
         officeCode: "SRAU",
-        service: service,
+        service: targetServiceText,
         date: selectedDate,
         time: selectedTime,
         receiverName: claimant === "someone-else" ? receiverName.trim() : "",
         student: currentStudent || { name: "Juan Dela Cruz", program: "BSIT" },
-        feeText: service === "Transcript of Records" ? "TOR Fee" : "Certificate Fee"
+        feeText: absoluteTotalPriceText
       });
 
-      window.location.href = `/ticket?id=${encodeURIComponent(appointment.id)}&service=${encodeURIComponent(service)}`;
+      window.location.href = `/ticket?id=${encodeURIComponent(appointment.id)}&service=${encodeURIComponent(targetServiceText)}&price=${encodeURIComponent(absoluteTotalPriceText)}`;
     } catch (err) {
       setMessage("Database Connection Error: " + err.message);
     }
@@ -170,7 +211,6 @@ export default function Srau() {
       <main className="srau-main">
         <h1 className="srau-title">University Registrar's Office (SRAU)</h1>
 
-        {/* 1. Choose a service */}
         <section className="srau-section">
           <h2>1 · Choose a service</h2>
           <div className="srau-service-grid">
@@ -185,16 +225,23 @@ export default function Srau() {
                   {item}
                   {item === "Transcript of Records" && " ▾"}
                 </button>
-                {item === "Transcript of Records" && service === "Transcript of Records" && (
+                {item === "Transcript of Records" && service === "Transcript of Records" && liveTorLevels.length > 0 && (
                   <select
                     className="srau-tor-level"
                     value={torLevel}
                     onChange={(event) => setTorLevel(event.target.value)}
                     aria-label="Transcript of Records academic level"
                   >
-                    <option value="College">College</option>
-                    <option value="Master's">Master's</option>
-                    <option value="Doctor's">Doctor's</option>
+                    {liveTorLevels.map((lvl) => {
+                      const levelTitle = lvl.name.includes("(") 
+                        ? lvl.name.substring(lvl.name.indexOf("(") + 1, lvl.name.indexOf(")"))
+                        : lvl.name;
+                      return (
+                        <option key={lvl.id} value={levelTitle}>
+                          {levelTitle}
+                        </option>
+                      );
+                    })}
                   </select>
                 )}
               </div>
@@ -203,19 +250,28 @@ export default function Srau() {
 
           <div className="srau-fee-note">
             <strong>Fee:</strong>{" "}
-            {service === "Transcript of Records"
-              ? `₱${torLevel === "College" ? 350 : torLevel === "Master's" ? 500 : 750} + ₱30 document stamp = ₱${torLevel === "College" ? 380 : torLevel === "Master's" ? 530 : 780}`
-              : service === "CTC / Authentication"
-              ? "₱150"
-              : service === "Certificates"
-              ? "₱150"
-              : "₱500"}
+            {service === "Transcript of Records" ? (
+              (() => {
+                const currentLevelMatch = liveTorLevels.find(l => l.name.toLowerCase().includes(torLevel.toLowerCase()));
+                if (currentLevelMatch) {
+                  const documentBasePrice = parseFloat(currentLevelMatch.fee) || 0.00;
+                  const combinedAbsoluteTotal = documentBasePrice + stampFee;
+                  return `₱${documentBasePrice.toFixed(2)} (Document Fee) + ₱${stampFee.toFixed(2)} (Document Stamp) = ₱${combinedAbsoluteTotal.toFixed(2)}`;
+                }
+                return "Loading dynamic pricing parameters...";
+              })()
+            ) : (
+              (() => {
+                const matchedRow = allBaseServices.find(s => String(s.service_name).toLowerCase().trim() === String(service).toLowerCase().trim());
+                const activePrice = matchedRow ? parseFloat(matchedRow.fee_text || matchedRow.fee) : 150.00;
+                return `₱${activePrice.toFixed(2)}`;
+              })()
+            )}
             {" · "}
             <strong>Processing:</strong> 5 working days. The office prepares your document before you arrive.
           </div>
         </section>
-
-        {/* 2. Upload requirements */}
+         {/* 2. Upload requirements */}
         <section className="srau-section">
           <h2>2 · Upload requirements</h2>
           <div className="srau-upload-grid">

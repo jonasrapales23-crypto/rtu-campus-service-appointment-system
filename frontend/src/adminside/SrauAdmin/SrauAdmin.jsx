@@ -1,253 +1,408 @@
 import { useEffect, useMemo, useState } from "react";
-import { createAppointment, fetchAdminAppointments, updateAdminStatus } from "../../services/appointments.js";
-import "./SrauAdmin.css";
+import { createAppointment, fetchAdminAppointments, updateAdminStatus, fetchOfficeServices, updateServiceFee } from "../../services/appointments.js";
 import Navbar from "../../navbar/Navbar.jsx";
 import CalendarSlotManagement from "../CalendarSlotManagement/CalendarSlotManagement.jsx";
-import StatusBadge from "./components/StatusBadge.jsx";
-import SectionHeading from "./components/SectionHeading.jsx";
-import SearchInput from "./components/SearchInput.jsx";
-import AppointmentTable from "./components/AppointmentTable.jsx";
-import AdminModal from "./components/AdminModal.jsx";
-import ConfirmItemReadyModal from "../components/ConfirmItemReadyModal.jsx";
 import VerifyAtCounterModal from "../components/VerifyAtCounterModal.jsx";
 import useDailySlots from "../CalendarSlotManagement/useDailySlots.js";
-import { initialAppointments, initialServices, times } from "./data/appointments.js";
-import { isHandled, isPendingRequest, normalizeStatus } from "./utils/status.js";
+import "../MisuAdmin/MisuAdmin.css";
+import "./SrauAdmin.css";
 
-// 15 open slots x 6 = 90 per day (the office accommodates 75–100). 1:30 PM starts closed.
-const initialSlots = times.map((time) => ({ time, capacity: time === "1:30 PM" ? 0 : 6, booked: { "8:30 AM": 6, "9:00 AM": 3, "9:30 AM": 4, "10:00 AM": 6, "1:00 PM": 1 }[time] || 0, closed: time === "1:30 PM" }));
+const seedServices = [
+  { id: 4, name: "Transcript of Records", available: true, requirements: "Clearance form, 2x2 picture", duration: "5-7 working days", fee: "0.00" },
+  { id: 5, name: "Certificates", available: true, requirements: "Student ID copy", duration: "2-3 working days", fee: "0.00" },
+  { id: 6, name: "Diploma", available: true, requirements: "Graduation clearance", duration: "10-15 working days", fee: "0.00" },
+  { id: 15, name: "CTC / Authentication", available: true, requirements: "Original document", duration: "1-2 working days", fee: "0.00" }
+];
+
+const closedStatuses = ["Served", "No-show", "Claimed", "Cancelled"];
+const badgeClass = (s) => String(s || "").toLowerCase().replaceAll(" ", "-");
+const initialSlots = [
+  { time: "8:00 AM", capacity: 15, booked: 0, closed: false },
+  { time: "9:00 AM", capacity: 15, booked: 15, closed: false },
+  { time: "10:00 AM", capacity: 15, booked: 2, closed: false },
+  { time: "11:00 AM", capacity: 15, booked: 0, closed: false },
+  { time: "1:00 PM", capacity: 15, booked: 8, closed: false },
+  { time: "2:00 PM", capacity: 15, booked: 15, closed: false },
+  { time: "3:00 PM", capacity: 0, booked: 0, closed: true }
+];
 
 export default function SrauAdmin() {
   const [section, setSection] = useState("Dashboard");
-  const [reportsView, setReportsView] = useState("Reports");
-  const [appointments, setAppointments] = useState([]);
-  const [services, setServices] = useState(initialServices);
+  const [rows, setRows] = useState([]);
+  const [services, setServices] = useState(seedServices);
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [isSaving, setIsSaving] = useState(false);
+
+  /* Synchronizes operational logs and handles structural 3NF service pricing mappings */
+  function refreshData() {
+    fetchAdminAppointments("SRAU").then((liveData) => {
+      if (liveData && Array.isArray(liveData)) {
+        setRows(liveData);
+        if (liveData.length > 0 && !liveData.some((r) => r.date === selectedDate)) {
+          setSelectedDate(liveData[0].date);
+        }
+      }
+    }).catch(() => setRows([]));
+
+    fetchOfficeServices("SRAU").then((dbServices) => {
+      if (dbServices && Array.isArray(dbServices) && dbServices.length > 0) {
+        setServices((oldServices) =>
+          oldServices.map((s, index) => {
+            const dbMatch = dbServices.find(
+              (x) => String(x.service_name || "").toLowerCase().replace(/[^a-z0-9]/g, "") ===
+                     String(s.name || "").toLowerCase().replace(/[^a-z0-9]/g, "")
+            );
+            
+            const fallbackDbRow = dbServices[index] || {};
+            const resolvedId = dbMatch ? dbMatch.id : (fallbackDbRow.id || (index + 4));
+            const liveFee = dbMatch ? (dbMatch.fee_text ?? dbMatch.fee) : (fallbackDbRow.fee_text ?? fallbackDbRow.fee ?? s.fee);
+            
+            const cleanNumericFee = String(liveFee).replace(/[^0-9.]/g, "");
+            const parsedFee = parseFloat(cleanNumericFee);
+            const standardizedFee = !isNaN(parsedFee) ? parsedFee.toFixed(2) : "0.00";
+
+            return {
+              ...s,
+              id: resolvedId,
+              fee: standardizedFee
+            };
+          })
+        );
+      }
+    }).catch((err) => console.error("Database tracking lookup failure:", err));
+  }
 
   useEffect(() => {
-    fetchAdminAppointments("SRAU").then((liveData) => {
-      setAppointments(liveData);
-      if (liveData.length > 0 && !liveData.some((a) => a.date === selectedDate)) {
-        setSelectedDate(liveData[0].date);
-      }
-    });
+    refreshData();
   }, []);
-  const { slots, setSlots, dayStatus } = useDailySlots({ template: initialSlots, rows: appointments, selectedDate });
-  const [dateFilter, setDateFilter] = useState("");
+
+  const { slots, setSlots, dayStatus } = useDailySlots({ template: initialSlots, rows, selectedDate });
   const [query, setQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
-  const [serviceFilter, setServiceFilter] = useState("All");
-  const [modal, setModal] = useState("");
-  const [readyCandidate, setReadyCandidate] = useState(null);
+  const [recordQuery, setRecordQuery] = useState("");
+  const [expandedStudent, setExpandedStudent] = useState("");
+  const [queueFilters, setQueueFilters] = useState({ service: "All services", status: "All statuses", type: "All types" });
+  const [bookingFilters, setBookingFilters] = useState({ date: "All dates", status: "All statuses", service: "All services", type: "All types" });
+  const [modal, setModal] = useState(null);
   const [notice, setNotice] = useState("");
-  const [selectedAppointment, setSelectedAppointment] = useState(initialAppointments[0]);
-  const [walkIn, setWalkIn] = useState({ student: "", number: "", program: "", service: "CTC / Authentication" });
-  const [verifyChecks, setVerifyChecks] = useState([false, false, false, false]);
-  const [verifyQuery, setVerifyQuery] = useState("10-19-R-014-TOR-482913");
-  const [serviceDraft, setServiceDraft] = useState(null);
-  const [serviceOriginalName, setServiceOriginalName] = useState(null);
-  const [slotCapacity, setSlotCapacity] = useState("12");
+  const [walkIn, setWalkIn] = useState({ student: "", number: "", program: "BSIT", service: seedServices[0].name });
+  const [slotDraft, setSlotDraft] = useState({ time: "8:00 AM", capacity: "15" });
 
-  const filteredAppointments = useMemo(() => appointments.filter((item) => {
-    const haystack = `${item.id} ${item.short} ${item.student} ${item.number} ${item.service}`.toLowerCase();
-    const status = normalizeStatus(item.status);
-    const matchesStatus = statusFilter === "All"
-      || (statusFilter === "Done" ? ["served", "claimed", "done"].includes(status)
-        : statusFilter === "Needs processing" ? ["submitted", "needs processing"].includes(status)
-        : status === normalizeStatus(statusFilter));
-    return haystack.includes(query.toLowerCase()) && matchesStatus && (serviceFilter === "All" || item.service === serviceFilter);
-  }), [appointments, query, statusFilter, serviceFilter]);
+  const latestDate = rows.map(r => r.date).sort().at(-1) || selectedDate;
+  const today = rows.filter(r => r.date === selectedDate);
+  const weekStart = new Date(`${selectedDate}T00:00:00`); weekStart.setDate(weekStart.getDate() - 6); const weekStartText = weekStart.toISOString().slice(0, 10);
+  const weekRows = rows.filter(r => r.date >= weekStartText && r.date <= selectedDate);
+  const filtered = useMemo(() => rows.filter(r => `${r.id} ${r.student} ${r.number} ${r.service}`.toLowerCase().includes(query.toLowerCase())), [rows, query]);
+  const activeQueue = today.filter(r => !closedStatuses.includes(r.status));
+  const hours = Array.of(8, 9, 10, 11, 13, 14, 15, 16).map(hour => ({ hour, count: weekRows.filter(r => { const m = r.time.match(/(\d{1,2}):\d{2}\s*(AM|PM)/i); if (!m) return false; let h = Number(m[1]) % 12; if (m[2].toUpperCase() === "PM") h += 12; return h === hour; }).length }));
+  const maxHour = Math.max(1, ...hours.map(h => h.count));
+   /* Validates and sanitizes fee change parameters to maintain numerical consistency */
+  function handleFeeChange(index, value) {
+    let cleanVal = value.replace(/[^0-9.]/g, "");
+    const parts = cleanVal.split(".");
+    if (parts.length > 2) {
+      cleanVal = `${parts[0]}.${parts[1]}`;
+    }
+    setServices((old) =>
+      old.map((s, i) => (i === index ? { ...s, fee: cleanVal } : s))
+    );
+  }
 
-  // Queue and online requests are active-work views; completed/closed records are history only.
-  const activeQueueAppointments = filteredAppointments.filter((item) => !isHandled(item));
-  const activeOnlineRequests = filteredAppointments.filter((item) => item.type === "Booked" && !isHandled(item));
-  const todayAppointments = appointments.filter((a) => a.date === selectedDate);
-  const requestsToProcess = appointments.filter(isPendingRequest);
-  const readyForPickupToday = appointments.filter((a) => a.date === selectedDate && a.status === "Ready for pickup");
-  const reportRows = filteredAppointments.filter((a) => !dateFilter || a.date === dateFilter);
-  const weekStartDate = new Date(`${selectedDate}T00:00:00`); weekStartDate.setDate(weekStartDate.getDate() - 6);
-  const weekStart = weekStartDate.toISOString().slice(0, 10);
-  const weekRows = appointments.filter((a) => a.date >= weekStart && a.date <= selectedDate);
-  const hourBars = [[8, "8 AM"], [9, "9 AM"], [10, "10 AM"], [11, "11 AM"], [13, "1 PM"], [14, "2 PM"], [15, "3 PM"]].map(([hour, label]) => ({ label, value: weekRows.filter((a) => { const m = String(a.time).match(/(\d{1,2}):\d{2}\s*(AM|PM)/i); return m && (Number(m[1]) % 12) + (m[2].toUpperCase() === "PM" ? 12 : 0) === hour; }).length }));
-  const maxHourBar = Math.max(1, ...hourBars.map((b) => b.value));
-  const fullSlots = slots.filter((slot) => !slot.closed && slot.capacity > 0 && slot.booked >= slot.capacity);
+  /* Automatically rounds input configurations to two decimal places upon input blurring focus loss */
+  function handleFeeBlur(index) {
+    setServices((old) =>
+      old.map((s, i) => {
+        if (i === index) {
+          const parsed = parseFloat(s.fee);
+          return {
+            ...s,
+            fee: !isNaN(parsed) ? parsed.toFixed(2) : "0.00"
+          };
+        }
+        return s;
+      })
+    );
+  }
 
-  function announce(message) { setNotice(message); }
+  /* Explicitly triggers network PUT requests to persist all locally edited fees into MySQL */
+  async function handleSaveAllFees() {
+    setIsSaving(true);
+    setNotice("");
+    try {
+      /* Sequentially update each modified record entity via REST endpoints */
+      for (let i = 0; i < services.length; i++) {
+        const item = services[i];
+        const targetId = item.id;
+        if (targetId) {
+          await updateServiceFee(targetId, item.fee, "SRAU Admin");
+        }
+      }
+      setNotice("Registrar service configurations synchronized successfully. Data is now live.");
+      refreshData();
+    } catch (err) {
+      setNotice("Data synchronization failure detected: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   async function updateStatus(id, status) {
-    const target = appointments.find((item) => item.id === id);
+    const target = rows.find((r) => r.id === id);
     if (target?.dbId) {
       await updateAdminStatus(target.dbId, status, "SRAU Admin");
     }
-    setAppointments((old) => old.map((item) => (item.id === id ? { ...item, status } : item)));
-    setSelectedAppointment((old) => (old?.id === id ? { ...old, status } : old));
-    announce(`${id.startsWith("WALK-IN") ? "Walk-in" : "Appointment"} marked ${status.toLowerCase()}.`);
+    setRows((old) => old.map((r) => (r.id === id ? { ...r, status } : r)));
+    setNotice(`${id} marked ${status.toLowerCase()}.`);
+    setModal(null);
+    refreshData();
   }
 
-   async function addWalkIn(event) {
-    event.preventDefault();
-    if (!walkIn.student.trim() || !walkIn.number.trim() || !walkIn.program || !walkIn.service) {
-      announce("Complete the student name, student number, program, and service first.");
+  function openStudent(r) {
+    setRecordQuery(r.number && r.number !== "Not provided" ? r.number : r.student);
+    setExpandedStudent(r.number && r.number !== "Not provided" ? r.number : r.student);
+    setSection("Records");
+    setQuery("");
+  }
+
+  async function addWalkin(e) {
+    e.preventDefault();
+    if (!walkIn.student.trim() || !walkIn.number.trim()) {
+      setNotice("Enter the student's name and student number first.");
       return;
     }
 
     try {
-      const saved = await createAppointment({
+      await createAppointment({
         officeCode: "SRAU",
         service: walkIn.service,
         date: selectedDate,
         time: "Walk-in",
         student: { name: walkIn.student.trim(), program: walkIn.program },
-        feeText: "Walk-in counter",
+        feeText: "0.00",
       });
 
-      const id = saved.controlNumber || `WALK-IN-${String(appointments.filter((a) => a.type === "Walk-in").length + 1).padStart(3, "0")}`;
-      setAppointments((old) => [
-        {
-          dbId: saved.id,
-          id,
-          short: "—",
-          student: walkIn.student.trim(),
-          number: walkIn.number.trim(),
-          program: walkIn.program,
-          service: walkIn.service,
-          date: selectedDate,
-          time: "Walk-in",
-          type: "Walk-in",
-          status: "Processing",
-        },
-        ...old,
-      ]);
-      setWalkIn({ student: "", number: "", program: "", service: "CTC / Authentication" });
-      setModal("");
+      setWalkIn({ student: "", number: "", program: "BSIT", service: services[0]?.name || "Transcript of Records" });
+      setModal(null);
       setSection("Queue");
-      announce("Walk-in added to today's queue and saved to database.");
+      setNotice("Walk-in added to today's queue and saved to database.");
+      refreshData();
     } catch (err) {
-      announce("Failed to save walk-in: " + err.message);
+      setNotice("Failed to save walk-in: " + err.message);
     }
   }
 
-  function showAppointment(item) {
-    if (normalizeStatus(item.status) !== "ready for pickup") {
-      announce("This request can only be reviewed after it has been marked Ready for pickup.");
-      return;
-    }
-    setSelectedAppointment(item); setVerifyQuery(item.id); setVerifyChecks([false, false, false, false]); setModal("verify-counter");
-  }
-  function requestMarkReady(item) { setReadyCandidate(item); setModal("confirm-ready"); }
-  function confirmMarkReady() {
-    if (!readyCandidate) return;
-    const candidate = readyCandidate;
-    updateStatus(candidate.id, "Ready for pickup");
-    setModal(""); setReadyCandidate(null);
-    announce(`${candidate.student}'s request is now Ready for pickup.`);
-  }
-  function completeReview(status) {
-    if (normalizeStatus(selectedAppointment?.status) !== "ready for pickup") { announce("Only requests marked Ready for pickup can be reviewed at the counter."); return; }
-    updateStatus(selectedAppointment.id, status);
-    setModal("");
-    setNotice(`${selectedAppointment.student}'s appointment marked ${status.toLowerCase()}. Returned to the previous section.`);
-  }
-  function openServiceEditor(service = null) {
-    setServiceOriginalName(service?.name ?? null);
-    setServiceDraft(service ? { ...service } : { name: "", available: true, fee: "₱ ___", processing: "Set by office", pickup: true, eligibility: "All students", requirements: "", notes: "" });
-    setModal("service");
-  }
-  function saveService(event) {
-    event.preventDefault();
-    if (!serviceDraft?.name.trim()) { announce("Enter a service name before saving."); return; }
-    setServices((old) => {
-      const withoutOriginal = serviceOriginalName ? old.filter((s) => s.name !== serviceOriginalName) : old;
-      const alreadyExists = withoutOriginal.some((s) => s.name === serviceDraft.name);
-      return alreadyExists
-        ? withoutOriginal.map((s) => s.name === serviceDraft.name ? serviceDraft : s)
-        : [...withoutOriginal, serviceDraft];
-    });
-    setModal(""); announce("Service saved.");
-  }
-  function exportReport() {
-    const csv = ["Control number,Student,Service,Date,Time,Type,Status", ...appointments.map((a) => [a.id, a.student, a.service, a.date, a.time, a.type, a.status].map((v) => `"${String(v).replaceAll('"', '""')}"`).join(","))].join("\n");
+  function exportCSV() {
+    const csv = ["Control number,Student,Student number,Program,Service,Date,Time,Type,Status", ...rows.map(r => [r.id, r.student, r.number, r.program, r.service, r.date, r.time, r.type, r.status].map(v => `"${String(v).replaceAll('"', '""')}"`).join(","))].join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
-    const link = document.createElement("a"); link.href = url; link.download = "srau-report.csv"; link.click(); URL.revokeObjectURL(url); announce("Report exported as CSV.");
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "srau-report.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+    setNotice("Report exported as CSV.");
   }
 
-  return <div className="srau-admin-shell">
-    <Navbar accountType="srau-admin" adminSection={section} onAdminNavigate={(item) => {
-      setSection(item); setNotice("");
-      if (item === "Reports") { setReportsView("Reports"); setStatusFilter("All"); setServiceFilter("All"); setDateFilter(""); setQuery(""); }
-      if (item === "Queue" || item === "Requests") { setStatusFilter("All"); setQuery(""); }
-    }} />
-    <main className="srau-admin-main">
-        <div className="srau-page-title"><div><p className="srau-eyebrow">STUDENT RECORDS AND ADMISSION UNIT</p><h1>{section === "Verify at counter" ? "Verify at the counter" : section === "Appointments" ? "All appointments" : section === "Slots" ? "Slot management" : section === "Requests" ? "Online requests" : section === "Queue" ? "Today's queue" : section}</h1><p className="srau-subtitle">Manage student requests and counter operations for SRAU.</p></div><div className="srau-date-control"><label htmlFor="srau-date">Working date</label><input id="srau-date" type="date" value={selectedDate} onChange={(e) => e.target.value && setSelectedDate(e.target.value)} /></div></div>
-        {notice && <div className="srau-notice" role="status"><span>{notice}</span><button aria-label="Dismiss message" onClick={() => setNotice("")}>×</button></div>}
+  function table(list, actions = false) {
+    return (
+      <div className="misu-table-wrap">
+        <table className="misu-table">
+          <thead>
+            <tr>
+              <th>Control no.</th>
+              <th>Student</th>
+              <th>Service</th>
+              <th>Date / time</th>
+              <th>Type</th>
+              <th>Status</th>
+              {actions &&<th>Action</th>}
+            </tr>
+          </thead>
+          <tbody>
+            {list.map(r => (
+              <tr key={r.id}>
+                <td>{r.id}</td>
+                <td>
+                  <button className="misu-student-link" onClick={() => openStudent(r)}>{r.student}</button>
+                  <small>{r.number} · {r.program}</small>
+                </td>
+                <td>{r.service}</td>
+                <td>{r.date}<small>{r.time}</small></td>
+                <td>{r.type}</td>
+                <td><span className={`misu-badge ${badgeClass(r.status)}`}>{r.status}</span></td>
+                {actions && (
+                  <td>
+                    <div className="misu-row-actions">
+                      {!closedStatuses.includes(r.status) && <button className="misu-btn small" onClick={() => setModal({ type: "verify", row: r })}>Verify / mark served</button>}
+                      {!closedStatuses.includes(r.status) && <button className="misu-btn small outline" onClick={() => updateStatus(r.id, "No-show")}>No-show</button>}
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {!list.length && <p className="bau-empty">No appointments match these filters.</p>}
+      </div>
+    );
+  }
+   return (
+   <div className="misu-shell rtu-shell srau-shell">
+     <Navbar accountType="srau-admin" adminSection={section === "Records" ? "Reports" : section} onAdminNavigate={item => { setSection(item); setNotice(""); setQuery(""); }} />
+     
+     <main className="misu-main">
+       <header className="misu-heading">
+         <div>
+           <p className="misu-eyebrow">REGISTRAR UNIT · SRAU</p>
+           <h1>{section === "Queue" ? "Today's queue" : section === "Requests" ? "Online requests" : section === "Services" ? "Services" : section === "Slots" ? "Slot management" : section === "Records" ? "Student records" : section}</h1>
+           <p className="muted">Manage document processing, student records, window queue lines, and daily booking slots.</p>
+         </div>
+         <label className="bau-date">Working date<input type="date" value={selectedDate} onChange={e => e.target.value && setSelectedDate(e.target.value)} /></label>
+       </header>
 
-        {section === "Dashboard" && <>
-          <div className="srau-stat-grid">
-            <button type="button" className="srau-stat-card blue clickable" onClick={() => { setSection("Queue"); setStatusFilter("All"); setQuery(""); }}>
-              <span>Appointments today</span><strong>{todayAppointments.length}</strong><small>Scheduled and walk-ins · View today's queue ↗</small>
-            </button>
-            <button type="button" className="srau-stat-card green clickable" onClick={() => { setSection("Reports"); setReportsView("Appointments"); setStatusFilter("Done"); setDateFilter(""); setQuery(""); }}>
-              <span>Done</span><strong>{todayAppointments.filter((a) => ["Served", "Claimed", "Done"].includes(a.status)).length}</strong><small>Served or claimed · View completed ↗</small>
-            </button>
-            <button type="button" className="srau-stat-card red clickable" onClick={() => { setSection("Reports"); setReportsView("Appointments"); setStatusFilter("No-show"); setDateFilter(""); setQuery(""); }}>
-              <span>No-show</span><strong>{todayAppointments.filter((a) => a.status === "No-show").length}</strong><small>Closed appointments · Review no-shows ↗</small>
-            </button>
-            <button type="button" className="srau-stat-card yellow clickable" onClick={() => { setSection("Requests"); setStatusFilter("Needs processing"); setQuery(""); }}>
-              <span>Requests to process</span><strong>{requestsToProcess.length}</strong><small>Needs staff action · Review requests ↗</small>
-            </button>
-          </div>
-          <div className="srau-content-grid">
-            <section className="srau-panel">
-              <SectionHeading title="Needs attention"><span className="srau-pill">Current totals</span></SectionHeading>
-              <button className="srau-attention-row" onClick={() => { setSection("Requests"); setStatusFilter("Needs processing"); setQuery(""); }}>
-                <span className="srau-attention-icon">↗</span>
-                <span><b>New requests to process</b><small>Review submitted student requests</small></span>
-                <span className={`srau-attention-count ${requestsToProcess.length > 0 ? "has-items" : "zero-items"}`}>{requestsToProcess.length}</span><span className="srau-arrow">›</span>
-              </button>
-              <button className="srau-attention-row" onClick={() => { setSection("Queue"); setStatusFilter("Ready for pickup"); setQuery(""); }}>
-                <span className="srau-attention-icon">✓</span>
-                <span><b>Requests ready for pickup today</b><small>Confirm identity at the counter</small></span>
-                <span className={`srau-attention-count ${readyForPickupToday.length > 0 ? "has-items" : "zero-items"}`}>{readyForPickupToday.length}</span><span className="srau-arrow">›</span>
-              </button>
-              {fullSlots.length > 0 ? fullSlots.map((slot) => <button className="srau-attention-row" key={slot.time} onClick={() => setSection("Slots")}>
-                <span className="srau-attention-icon urgent">◷</span>
-                <span><b>{slot.time} slot is <em className="srau-urgent-label">FULL</em></b><small>{slot.booked} of {slot.capacity} bookings · Review capacity</small></span>
-                <span className="srau-attention-count urgent-count">!</span><span className="srau-arrow">›</span>
-              </button>) : <button className="srau-attention-row" onClick={() => setSection("Slots")}>
-                <span className="srau-attention-icon">◷</span><span><b>No full time slots</b><small>All open slots currently have capacity</small></span><span className="srau-attention-count zero-items">0</span><span className="srau-arrow">›</span>
-              </button>}
-            </section>
-            <section className="srau-panel"><SectionHeading title="Today's time slots"><button className="srau-text-button" onClick={() => setSection("Slots")}>Manage slots →</button></SectionHeading><div className="srau-simple-table"><table><thead><tr><th>Time</th><th>Booked</th><th>Capacity</th><th>Status</th></tr></thead><tbody>{slots.slice(0, 5).map((slot) => <tr key={slot.time}><td>{slot.time}</td><td>{slot.booked}</td><td>{slot.capacity}</td><td><StatusBadge status={slot.closed ? "Closed" : slot.booked >= slot.capacity ? "Full" : "Open"} /></td></tr>)}</tbody></table></div></section>
-          </div>
-        </>}
+       {notice && <div className="misu-notice" role="status"><span>{notice}</span><button onClick={() => setNotice("")} aria-label="Dismiss message">×</button></div>}
 
-        {section === "Queue" && <><div className="srau-stat-grid compact"><article className="srau-stat-card"><span>Appointments today</span><strong>{activeQueueAppointments.filter((a) => a.date === selectedDate).length}</strong></article><article className="srau-stat-card green"><span>Served</span><strong>{appointments.filter((a) => a.date === selectedDate && a.status === "Served").length}</strong></article><article className="srau-stat-card red"><span>No-shows</span><strong>{appointments.filter((a) => a.date === selectedDate && a.status === "No-show").length}</strong></article></div><section className="srau-panel"><SectionHeading title="Queue list"><button className="srau-button srau-button-primary" onClick={() => setModal("walkin")}>＋ Add walk-in</button></SectionHeading><div className="srau-toolbar"><SearchInput value={query} onChange={setQuery} placeholder="Look up control number or student" /><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filter by status"><option>All</option>{["Submitted", "Needs processing", "Processing", "Ready for pickup"].map((s) => <option key={s}>{s}</option>)}</select></div><AppointmentTable rows={activeQueueAppointments.filter((a) => a.date === selectedDate)} onVerify={showAppointment} onStatus={updateStatus} onMarkReady={requestMarkReady} reviewOnly /></section><section className="srau-panel srau-policy"><b>No-show policy</b><p>Rebook; the missed appointment is closed and the student books again. The missed appointment is closed and the student must book again.</p></section></>}
+       {section === "Dashboard" && (
+         <>
+           <div className="misu-stats">
+             <button onClick={() => setSection("Queue")}><strong>{today.length}</strong><span>Appointments today · View queue ↗</span></button>
+             <button className="green" onClick={() => { setSection("Requests"); setBookingFilters({ ...bookingFilters, date: selectedDate, status: "Served" }); }}><strong>{today.filter(r => r.status === "Served" || r.status === "Claimed").length}</strong><span>Served today · View bookings ↗</span></button>
+             <button className="red" onClick={() => { setSection("Requests"); setBookingFilters({ ...bookingFilters, date: selectedDate, status: "No-show" }); }}><strong>{today.filter(r => r.status === "No-show").length}</strong><span>No-shows · Review records ↗</span></button>
+           </div>
+           <div className="misu-columns">
+             <section className="misu-panel">
+               <h2>Needs attention</h2>
+               <button className="misu-attention" onClick={() => { setSection("Requests"); setBookingFilters({ ...bookingFilters, date: selectedDate, status: "All statuses", type: "Booked" }); }}><b>{today.filter(r => r.type === "Booked" && !closedStatuses.includes(r.status)).length} students booked for today</b><span>Review today's appointment list</span></button>
+               <button className="misu-attention" onClick={() => { setSection("Queue"); setQueueFilters({ ...queueFilters, type: "Walk-in" }); }}><b>{today.filter(r => r.type === "Walk-in" && !closedStatuses.includes(r.status)).length} walk-ins waiting</b><span>Added by staff · View queue</span></button>
+               <button className="misu-attention" onClick={() => setSection("Slots")}><b>{slots.filter(s => !s.closed && s.capacity > 0 && s.booked >= s.capacity).length} slots are full</b><span>Manage today's capacity</span></button>
+             </section>
+             <section className="misu-panel">
+               <h2>Today's bookings by time</h2>
+               <div className="misu-table-wrap">
+                 <table className="misu-table">
+                   <thead><tr><th>Time</th><th>Booked</th><th>Capacity</th></tr></thead>
+                   <tbody>{slots.slice(0, 5).map(s => <tr key={s.time}><td>{s.time}</td><td>{s.booked}</td><td>{s.closed ? "Closed" : s.capacity}</td></tr>)}</tbody>
+                 </table>
+               </div>
+             </section>
+           </div>
+           <section className="misu-panel">
+             <div className="bau-section-head">
+               <h2>Today's active queue</h2>
+               <button className="misu-btn" onClick={() => setModal({ type: "walkin" })}>+ Add walk-in</button>
+             </div>
+             {table(activeQueue, true)}
+           </section>
+         </>
+       )}
+          {section === "Queue" && (
+         <>
+           <div className="misu-toolbar misu-filters">
+             <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search control number, student or student number" />
+             <select value={queueFilters.service} onChange={e => setQueueFilters({ ...queueFilters, service: e.target.value })}><option>All services</option>{services.map(s => <option key={s.name}>{s.name}</option>)}</select>
+             <select value={queueFilters.status} onChange={e => setQueueFilters({ ...queueFilters, status: e.target.value })}><option>All statuses</option>{["Booked", "Waiting", "Submitted", "Processing", "Ready for pickup", "Served", "No-show", "Cancelled"].map(s => <option key={s}>{s}</option>)}</select>
+             <select value={queueFilters.type} onChange={e => setQueueFilters({ ...queueFilters, type: e.target.value })}><option>All types</option><option>Booked</option><option>Walk-in</option></select>
+             <button className="misu-btn" onClick={() => setModal({ type: "walkin" })}>+ Add walk-in</button>
+           </div>
+           <p className="muted">No-shows and served appointments are excluded by default from the active queue.</p>
+           {table(filtered.filter(r => r.date === selectedDate && !closedStatuses.includes(r.status) && (queueFilters.service === "All services" || r.service === queueFilters.service) && (queueFilters.status === "All statuses" || r.status === queueFilters.status) && (queueFilters.type === "All types" || r.type === queueFilters.type)), true)}
+         </>
+       )}
 
+       {section === "Requests" && (
+         <>
+           <div className="misu-toolbar misu-filters">
+             <input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search control number or student" />
+             <select value={bookingFilters.date} onChange={e => setBookingFilters({ ...bookingFilters, date: e.target.value })}><option>All dates</option>{[...new Set([...rows.map(r => r.date), selectedDate])].sort().map(d => <option key={d}>{d}</option>)}</select>
+             <select value={bookingFilters.status} onChange={e => setBookingFilters({ ...bookingFilters, status: e.target.value })}><option>All statuses</option>{[...new Set([...rows.map(r => r.status), "Cancelled"])].sort().map(s => <option key={s}>{s}</option>)}</select>
+             <select value={bookingFilters.service} onChange={e => setBookingFilters({ ...bookingFilters, service: e.target.value })}><option>All services</option>{services.map(s => <option key={s.name}>{s.name}</option>)}</select>
+             <select value={bookingFilters.type} onChange={e => setBookingFilters({ ...bookingFilters, type: e.target.value })}><option>All types</option><option>Booked</option><option>Walk-in</option></select>
+           </div>
+           {table(filtered.filter(r => (bookingFilters.date === "All dates" || r.date === bookingFilters.date) && (bookingFilters.status === "All statuses" || r.status === bookingFilters.status) && (bookingFilters.service === "All services" || r.service === bookingFilters.service) && (bookingFilters.type === "All types" || r.type === bookingFilters.type)), true)}
+         </>
+       )}
 
-        {section === "Verify at counter" && <div className="srau-content-grid verify-grid"><section className="srau-panel"><SectionHeading title="Find appointment" /><form className="srau-lookup-form" onSubmit={(e) => { e.preventDefault(); const found = appointments.find((a) => a.id.toLowerCase() === verifyQuery.toLowerCase() || a.short.toLowerCase() === verifyQuery.toLowerCase() || a.student.toLowerCase() === verifyQuery.toLowerCase()); if (found && normalizeStatus(found.status) === "ready for pickup") { setSelectedAppointment(found); setVerifyChecks([false, false, false, false]); announce(`Loaded ${found.student}'s ready-for-pickup request.`); } else if (found) announce("This request cannot be reviewed yet. It must be marked Ready for pickup first."); else announce("No matching appointment found. Try a full control number or student name."); }}><input value={verifyQuery} onChange={(e) => setVerifyQuery(e.target.value)} placeholder="Control number or student name" aria-label="Control number or student name" /><button className="srau-button srau-button-primary">Look up</button></form><div className="srau-request-summary"><span className="srau-eyebrow">SELECTED REQUEST</span><h3>{selectedAppointment.service}</h3><p>{selectedAppointment.student} · {selectedAppointment.number} · {selectedAppointment.program}</p><div className="srau-summary-line"><span>Control number</span><b>{selectedAppointment.id}</b></div><div className="srau-summary-line"><span>Pickup schedule</span><b>{selectedAppointment.date} · {selectedAppointment.time}</b></div><div className="srau-summary-line"><span>Current status</span><StatusBadge status={selectedAppointment.status} /></div></div></section><section className="srau-panel"><SectionHeading title="Student verification" /><p className="srau-help-text">Confirm these details with the student. A control number does not replace identity verification.</p>{["Name", "Student number", "Program", "Dates of attendance"].map((label, i) => <label className="srau-check-row" key={label}><input type="checkbox" checked={verifyChecks[i]} onChange={(e) => setVerifyChecks((old) => old.map((v, n) => n === i ? e.target.checked : v))} /><span><b>{label}</b><small>{[selectedAppointment.student, selectedAppointment.number, selectedAppointment.program, "2023–2027"][i]}</small></span></label>)}<div className="srau-button-row"><button className="srau-button srau-button-primary" onClick={() => completeReview("Served")}>Mark served</button><button className="srau-button srau-button-danger-outline" onClick={() => completeReview("No-show")}>No-show</button></div></section></div>}
+       {section === "Records" && (
+         <>
+           <section className="misu-panel bau-records-back"><button className="misu-btn outline" onClick={() => setSection("Reports")}>← Back to reports</button><p className="muted">Student records are accessed through Reports.</p></section>
+           <div className="misu-toolbar"><input value={recordQuery} onChange={e => { setRecordQuery(e.target.value); setExpandedStudent(""); }} placeholder="Search student name or student number" /></div>
+           {[...new Map(rows.filter(r => `${r.student} ${r.number}`.toLowerCase().includes(recordQuery.toLowerCase())).map(r => [`${r.number}-${r.student}`, r])).values()].map(r => {
+             const key = r.number && r.number !== "Not provided" ? r.number : r.student;
+             const history = rows.filter(x => x.number === r.number && x.student === r.student).sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
+             return <section className="misu-panel misu-record" key={`${r.number}-${r.student}`}><button className="misu-record-title" onClick={() => setExpandedStudent(expandedStudent === key ? "" : key)}><span><h2>{r.student}</h2><p>{r.number} · {r.program}</p></span><span>{expandedStudent === key || recordQuery.trim() ? "Hide history ↑" : "View appointment history ↓"}</span></button>{(expandedStudent === key || recordQuery.trim()) && <><h3>SRAU document transaction history</h3><div className="misu-table-wrap"><table className="misu-table"><thead><tr><th>Date</th><th>Service</th><th>Type</th><th>Control no.</th><th>Status</th></tr></thead><tbody>{history.map(x => <tr key={x.id}><td>{x.date}</td><td>{x.service}</td><td>{x.type}</td><td>{x.id}</td><td><span className={`misu-badge ${badgeClass(x.status)}`}>{x.status}</span></td></tr>)}</tbody></table></div></>}</section>;
+           })}
+           {!rows.some(r => `${r.student} ${r.number}`.toLowerCase().includes(recordQuery.toLowerCase())) && <section className="misu-panel"><p>No student records match that search.</p></section>}
+         </>
+       )}
 
-        {section === "Requests" && <section className="srau-panel"><SectionHeading title="Online requests"><span className="srau-pill">Accepted uploads only</span></SectionHeading><div className="srau-toolbar"><SearchInput value={query} onChange={setQuery} placeholder="Search control number or student" /><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filter requests"><option>All</option>{["Submitted", "Needs processing", "Processing", "Ready for pickup"].map((s) => <option key={s}>{s}</option>)}</select></div><div className="srau-request-list">{activeOnlineRequests.map((item) => <article className="srau-request-card" key={item.id}><div><span className="srau-eyebrow">{item.short}</span><h3>{item.student}</h3><p>{item.service} · {item.time}</p><StatusBadge status={item.status} /></div><div className="srau-request-actions">{normalizeStatus(item.status) === "processing" && <button className="srau-button srau-button-primary" onClick={() => requestMarkReady(item)}>Mark ready</button>}{normalizeStatus(item.status) === "ready for pickup" && <button className="srau-button srau-button-outline" onClick={() => showAppointment(item)}>Review</button>}{["submitted", "needs processing"].includes(normalizeStatus(item.status)) && <button className="srau-button srau-button-outline" onClick={() => updateStatus(item.id, "Processing")}>Start processing</button>}</div></article>)}</div><p className="srau-help-text">Marking a request Ready for pickup updates its status.</p></section>}
+       {section === "Slots" && <CalendarSlotManagement officeName="SRAU" slots={slots} setSlots={setSlots} selectedDate={selectedDate} setSelectedDate={setSelectedDate} getDayStatus={dayStatus} note="Registrar booking windows open up to 7 days ahead. Daily capacities are calculated securely based on active window personnel constraints." onNotice={setNotice} />}
 
-        {section === "Slots" && <CalendarSlotManagement officeName="SRAU" slots={slots} setSlots={setSlots} selectedDate={selectedDate} setSelectedDate={setSelectedDate} getDayStatus={dayStatus} note="Select a date to manage the service appointment schedule. Slot changes are local to this browser session." onNotice={announce} />}
+         {section === "Services" && (
+         <section className="misu-panel">
+           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
+             <h2 style={{ margin: 0 }}>Services and fees</h2>
+             <button className="misu-btn" type="button" disabled={isSaving} onClick={handleSaveAllFees} style={{ background: "#2442c5", padding: "8px 16px" }}>{isSaving ? "Synchronizing..." : "Save Changes"}</button>
+           </div>
+           <div className="misu-table-wrap">
+             <table className="misu-table">
+               <thead><tr><th>Document Service</th><th>Available</th><th>Fee Config</th><th>Requirements</th><th>Processing Time</th></tr></thead>
+               <tbody>
+                 {services.map((s, i) => (
+                   <tr key={s.name}>
+                     <td><b>{s.name}</b></td>
+                     <td><button className={`misu-toggle ${s.available ? "on" : ""}`} onClick={() => setServices(old => old.map((x, j) => i === j ? { ...x, available: !x.available } : x))}>{s.available ? "On" : "Off"}</button></td>
+                     <td>
+                       <div style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                         <span style={{ fontWeight: "bold", color: "#14213d", fontSize: "14px" }}>₱</span>
+                         <input className="misu-inline" type="text" placeholder="0.00" value={s.fee} style={{ width: "90px", textAlign: "right" }} onChange={(e) => handleFeeChange(i, e.target.value)} onBlur={() => handleFeeBlur(i)} />
+                       </div>
+                     </td>
+                     <td><input className="misu-inline" value={s.requirements} onChange={e => setServices(old => old.map((x, j) => i === j ? { ...x, requirements: e.target.value } : x))} /></td>
+                     <td><input className="misu-inline" value={s.duration} onChange={e => setServices(old => old.map((x, j) => i === j ? { ...x, duration: e.target.value } : x))} /></td>
+                   </tr>
+                 ))}
+               </tbody>
+             </table>
+           </div>
+           {/* UPGRADED HELP LABEL INTEGRATION */}
+           <p className="muted" style={{ marginTop: "15px" }}>
+             * Note: For the Transcript of Records, the fee configured here acts as the mandatory Document Stamp Fee. 
+             The total amount displayed to students automatically adds this stamp value to the specific program level price (Undergraduate/Graduate).
+           </p>
+         </section>
+       )}
+        {section === "Reports" && (
+         <>
+           <section className="misu-panel bau-records-access"><div><h2>Student records</h2><p className="muted">Search students and review their historical document transactions data.</p></div><button className="misu-btn" onClick={() => { setSection("Records"); setRecordQuery(""); setExpandedStudent(""); }}>Open student records</button></section>
+           <div className="misu-stats"><div><strong>{weekRows.length}</strong><span>Appointments this week</span></div><div className="green"><strong>{weekRows.filter(r => ["Served", "Ready for pickup", "Claimed", "Done"].includes(r.status)).length}</strong><span>Completed</span></div><div className="red"><strong>{weekRows.filter(r => r.status === "No-show").length}</strong><span>No-shows</span></div></div>
+           <div className="misu-columns">
+             <section className="misu-panel"><h2>Busiest hours</h2>{hours.map(({ hour, count }) => <div className="misu-bar-row" key={hour}><span>{hour > 12 ? hour - 12 : hour}:00 {hour >= 12 ? "PM" : "AM"} <small>({count})</small></span><div><i style={{ width: `${count / maxHour * 100}%` }} /></div></div>)}</section>
+             <section className="misu-panel"><h2>Most requested documents</h2>{services.map(s => <div className="misu-product-row" key={s.name}><span>{s.name}</span><b>{weekRows.filter(r => r.service === s.name).length} requests</b></div>)}<button className="misu-btn" onClick={exportCSV}>Export CSV</button></section>
+           </div>
+           <section className="misu-panel"><h2>All appointments</h2><div className="misu-toolbar"><input value={query} onChange={e => setQuery(e.target.value)} placeholder="Search report log records..." /></div>{table(filtered, false)}</section>
+         </>
+       )}
+     </main>
 
-        {section === "Services" && <section className="srau-panel"><SectionHeading title="Services"><button className="srau-button srau-button-primary" onClick={() => openServiceEditor()}>＋ Add service</button></SectionHeading><div className="srau-toolbar"><SearchInput value={query} onChange={setQuery} placeholder="Search services" /></div><div className="srau-service-list">{services.filter((s) => s.name.toLowerCase().includes(query.toLowerCase())).map((service) => <article className="srau-service-card" key={service.name}><div className="srau-service-main"><h3>{service.name}</h3><div className="srau-service-meta"><span>Fee <b>{service.fee}</b></span><span>Processing <b>{service.processing}</b></span><span>Eligibility <b>{service.eligibility}</b></span></div><p><b>Requirements:</b> {service.requirements || "Not specified"}</p><p><b>Student note:</b> {service.notes || "None"}</p></div><div className="srau-service-actions"><StatusBadge status={service.available ? "Available" : "Unavailable"} /><button className="srau-button srau-button-outline" onClick={() => openServiceEditor(service)}>Edit</button><button className="srau-button srau-button-small srau-button-outline" onClick={() => { setServices((old) => old.map((s) => s.name === service.name ? { ...s, available: !s.available } : s)); announce(`${service.name} availability updated.`); }}>{service.available ? "Turn off" : "Turn on"}</button></div></article>)}</div><p className="srau-help-text">Fees follow the Cash &amp; Disbursement Unit citizens' charter and are paid at the Cashier. Confirm any changes with the office.</p></section>}
+     {modal && modal.type === "walkin" && (
+       <div className="misu-overlay">
+         <section className="misu-modal" role="dialog" aria-modal="true">
+           <button className="misu-close" onClick={() => setModal(null)} aria-label="Close">×</button>
+           <h2>Add walk-in transaction</h2>
+           <p className="muted">No online request ticket is created. The transaction is logged inside the queue sequence matrix natively.</p>
+           <form className="misu-form" onSubmit={addWalkin}>
+             <label>Student name<input required value={walkIn.student} onChange={e => setWalkIn({ ...walkIn, student: e.target.value })} /></label>
+             <label>Student number<input required value={walkIn.number} onChange={e => setWalkIn({ ...walkIn, number: e.target.value })} /></label>
+             <label>Program Block<select value={walkIn.program} onChange={e => setWalkIn({ ...walkIn, program: e.target.value })}>{["BSIT", "BSCS", "BSBA", "BSED", "BEED", "Other"].map(p => <option key={p}>{p}</option>)}</select></label>
+             <label>Document Service<select value={walkIn.service} onChange={e => setWalkIn({ ...walkIn, service: e.target.value })}>{services.filter(s => s.available).map(s => <option key={s.name}>{s.name}</option>)}</select></label>
+             <button className="misu-btn">Save walk-in</button>
+           </form>
+         </section>
+       </div>
+     )}
 
-        {section === "Reports" && <>
-          <div className="srau-report-tabs" role="tablist" aria-label="Reports sections">
-            <button type="button" role="tab" aria-selected={reportsView === "Reports"} className={reportsView === "Reports" ? "active" : ""} onClick={() => setReportsView("Reports")}>Reports</button>
-            <button type="button" role="tab" aria-selected={reportsView === "Appointments"} className={reportsView === "Appointments" ? "active" : ""} onClick={() => { setReportsView("Appointments"); setStatusFilter("All"); setServiceFilter("All"); setDateFilter(""); setQuery(""); }}>Appointments</button>
-          </div>
-          {reportsView === "Reports" ? <>
-            <div className="srau-stat-grid"><article className="srau-stat-card"><span>Appointments this week</span><strong>{weekRows.length}</strong><small>Current reporting period</small></article><article className="srau-stat-card green"><span>Completed</span><strong>{weekRows.filter((a) => ["Served", "Claimed", "Done"].includes(a.status)).length}</strong><small>Served or claimed</small></article><article className="srau-stat-card red"><span>No-shows</span><strong>{weekRows.filter((a) => a.status === "No-show").length}</strong><small>Marked no-show</small></article></div>
-            <div className="srau-content-grid"><section className="srau-panel"><SectionHeading title="Busiest hours" /><div className="srau-bars">{hourBars.map((bar) => <div className="srau-bar-column" key={bar.label}><span>{bar.value}</span><div className="srau-bar-track"><i style={{ height: `${(bar.value / maxHourBar) * 100}%` }} /></div><small>{bar.label}</small></div>)}</div></section><section className="srau-panel"><SectionHeading title="Most requested services" /><div className="srau-simple-table"><table><thead><tr><th>Service</th><th>Requests</th></tr></thead><tbody>{services.map((s) => [s.name, weekRows.filter((a) => a.service === s.name).length]).sort((a, b) => b[1] - a[1]).map(([name, count]) => <tr key={name}><td>{name}</td><td>{count}</td></tr>)}</tbody></table></div></section></div>
-            <section className="srau-panel"><SectionHeading title="Export report"><p className="srau-help-text">Download the appointment list as a CSV file.</p></SectionHeading><button className="srau-button srau-button-primary" onClick={exportReport}>Download CSV report</button></section>
-          </> : <section className="srau-panel"><SectionHeading title="Appointments"><button className="srau-button srau-button-outline" onClick={exportReport}>Export CSV</button></SectionHeading><div className="srau-toolbar"><SearchInput value={query} onChange={setQuery} placeholder="Control number or student" /><select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} aria-label="Filter by status"><option>All</option>{["Submitted", "Needs processing", "Processing", "Ready for pickup", "Served", "Claimed", "No-show", "Cancelled", "Done"].map((s) => <option key={s}>{s}</option>)}</select><select value={serviceFilter} onChange={(e) => setServiceFilter(e.target.value)} aria-label="Filter by service"><option>All</option>{services.map((s) => <option key={s.name}>{s.name}</option>)}</select><input aria-label="Filter date" type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} /></div><AppointmentTable rows={reportRows.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`))} onVerify={showAppointment} onStatus={updateStatus} reviewOnly hideActions /><p className="srau-table-foot">Showing {reportRows.length} records · Newest records appear first. Filters apply immediately.</p></section>}
-        </>}
-    </main>
-
-    {modal === "confirm-ready" && readyCandidate && <ConfirmItemReadyModal item={readyCandidate} officeLabel="SRAU · Student Records and Admission Unit" onClose={() => { setModal(""); setReadyCandidate(null); }} onConfirm={confirmMarkReady} />}
-    {modal === "verify-counter" && selectedAppointment && <VerifyAtCounterModal item={selectedAppointment} officeLabel="SRAU · Student Records and Admission Unit" onClose={() => setModal("")} onComplete={completeReview} /> }
-    {modal === "walkin" && <AdminModal title="Add walk-in student" onClose={() => setModal("")}><form className="srau-modal-form" onSubmit={addWalkIn}><label>Student name<input autoFocus value={walkIn.student} onChange={(e) => setWalkIn({ ...walkIn, student: e.target.value })} placeholder="Full name" /></label><label>Student number<input value={walkIn.number} onChange={(e) => setWalkIn({ ...walkIn, number: e.target.value })} placeholder="e.g. 2023-00123" /></label><label>Program<select value={walkIn.program} onChange={(e) => setWalkIn({ ...walkIn, program: e.target.value })}><option value="">Select program</option>{["BSIT", "BSCS", "BSBA", "BSED", "BEED", "Other"].map((p) => <option key={p}>{p}</option>)}</select></label><label>Service<select value={walkIn.service} onChange={(e) => setWalkIn({ ...walkIn, service: e.target.value })}>{services.map((s) => <option key={s.name}>{s.name}</option>)}</select></label><p className="srau-help-text">No ticket is created. This records the student in today's queue.</p><div className="srau-button-row"><button type="button" className="srau-button srau-button-outline" onClick={() => setModal("")}>Cancel</button><button className="srau-button srau-button-primary">Save walk-in</button></div></form></AdminModal>}
-    {modal === "slot" && <AdminModal title="Add a time slot" onClose={() => setModal("")}><form className="srau-modal-form" onSubmit={(e) => { e.preventDefault(); const time = e.currentTarget.elements.slotTime.value; if (slots.some((s) => s.time === time)) { announce("That time slot already exists."); return; } setSlots((old) => [...old, { time, capacity: Number(slotCapacity), booked: 0, closed: Number(slotCapacity) === 0 }]); setModal(""); announce(`${time} added to the schedule.`); }}><label>Time<input name="slotTime" type="time" required /></label><label>Capacity<input type="number" min="0" max="99" value={slotCapacity} onChange={(e) => setSlotCapacity(e.target.value)} required /></label><div className="srau-button-row"><button type="button" className="srau-button srau-button-outline" onClick={() => setModal("")}>Cancel</button><button className="srau-button srau-button-primary">Add slot</button></div></form></AdminModal>}
-    {modal === "service" && serviceDraft && <AdminModal title={serviceOriginalName ? "Edit service" : "Add service"} onClose={() => setModal("")}><form className="srau-modal-form" onSubmit={saveService}><label>Service name<input value={serviceDraft.name} onChange={(e) => setServiceDraft({ ...serviceDraft, name: e.target.value })} required /></label><label>Fee<input value={serviceDraft.fee} onChange={(e) => setServiceDraft({ ...serviceDraft, fee: e.target.value })} /></label><label>Processing time<input value={serviceDraft.processing} onChange={(e) => setServiceDraft({ ...serviceDraft, processing: e.target.value })} /></label><label>Eligibility<select value={serviceDraft.eligibility} onChange={(e) => setServiceDraft({ ...serviceDraft, eligibility: e.target.value })}>{["All students", "Graduates", "Currently enrolled", "Other"].map((x) => <option key={x}>{x}</option>)}</select></label><label>Requirements<textarea value={serviceDraft.requirements} onChange={(e) => setServiceDraft({ ...serviceDraft, requirements: e.target.value })} rows="2" /></label><label>Notes shown to students<textarea value={serviceDraft.notes} onChange={(e) => setServiceDraft({ ...serviceDraft, notes: e.target.value })} rows="2" /></label><label className="srau-inline-check"><input type="checkbox" checked={serviceDraft.available} onChange={(e) => setServiceDraft({ ...serviceDraft, available: e.target.checked })} /> Service is available</label><div className="srau-button-row"><button type="button" className="srau-button srau-button-outline" onClick={() => setModal("")}>Cancel</button><button className="srau-button srau-button-primary">Save service</button></div></form></AdminModal>}
-  </div>;
+     {modal && modal.type === "slot" && <div className="misu-overlay"><section className="misu-modal" role="dialog" aria-modal="true"><button className="misu-close" onClick={() => setModal(null)}>×</button><h2>Add appointment slot</h2><form className="misu-form" onSubmit={e => { e.preventDefault(); setSlots(old => [...old, { time: slotDraft.time, capacity: Number(slotDraft.capacity) || 15, booked: 0, closed: false }]); setModal(null); setNotice("Appointment slot added."); }}><label>Time<input required value={slotDraft.time} onChange={e => setSlotDraft({ ...slotDraft, time: e.target.value })} /></label><label>Capacity<input type="number" min="1" required value={slotDraft.capacity} onChange={e => setSlotDraft({ ...slotDraft, capacity: e.target.value })} /></label><button className="misu-btn">Save slot</button></form></section></div>}
+     {modal && modal.type === "capacity" && <div className="misu-overlay"><section className="misu-modal" role="dialog" aria-modal="true"><button className="misu-close" onClick={() => setModal(null)}>×</button><h2>Change slot capacity</h2><form className="misu-form" onSubmit={e => { e.preventDefault(); setSlots(old => old.map((s, i) => i === modal.index ? { ...s, capacity: Math.max(s.booked, Number(slotDraft.capacity) || s.capacity), closed: false } : s)); setModal(null); setNotice("Slot capacity updated."); }}><label>New capacity<input type="number" min="1" value={slotDraft.capacity} onChange={e => setSlotDraft({ ...slotDraft, capacity: e.target.value })} /></label><button className="misu-btn">Save capacity</button></form></section></div>}
+     {modal && modal.type === "verify" && <VerifyAtCounterModal item={modal.row} fields={[{ label: "Name", value: modal.row.student }, { label: "Student number", value: modal.row.number }, { label: "Document", value: modal.row.service }]} officeLabel="SRAU · Student Records and Admission" onClose={() => setModal(null)} onComplete={status => updateStatus(modal.row.id, status)} />}
+ </div>
+    
+ );
 }

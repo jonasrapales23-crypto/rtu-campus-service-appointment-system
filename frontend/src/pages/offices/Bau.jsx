@@ -1,67 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
 import "../../styles/bau.css";
 import { createAppointment } from "../../services/appointments.js";
-
-const books = [
-  { code: "6617", title: "Treasury Management", price: 325 },
-  {
-    code: "6647",
-    title: "The Steno Code: Unleashing the Potential of Machine Shorthand",
-    price: 400,
-  },
-  { code: "6523", title: "Understanding the Self", price: 420 },
-  { code: "6524", title: "Readings in Philippine History", price: 325 },
-  {
-    code: "6525",
-    title: "The Contemporary World: A Social Science Perspective",
-    price: 390,
-  },
-  {
-    code: "6527",
-    title: "Communicate and Connect: Purposive Communication",
-    price: 550,
-  },
-  {
-    code: "6528",
-    title: "An Eye for Art Appreciation: Perception and Expression, 2nd Edition",
-    price: 475,
-  },
-  { code: "6530", title: "Ethics for the Modern Student", price: 425 },
-  { code: "6531", title: "The Life and Works of Jose Rizal", price: 400 },
-  {
-    code: "6557",
-    title: "National Service Training Program I, 2023 Edition",
-    price: 450,
-  },
-  {
-    code: "6616",
-    title: "Productivity and Quality Tools for Enhanced Performance",
-    price: 425,
-  },
-  {
-    code: "6608",
-    title: "Facilities and Management, Second Edition",
-    price: 500,
-  },
-  { code: "6613", title: "Management Information System", price: 350 },
-  {
-    code: "6651",
-    title: "Obligations and Contracts, Second Edition",
-    price: 425,
-  },
-  {
-    code: "6612",
-    title: "Introduction to Human Resource Management",
-    price: 395,
-  },
-  {
-    code: "6537",
-    title: "Labor Law and Legislation, Second Edition",
-    price: 525,
-  },
-];
 
 const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
 
@@ -73,7 +14,6 @@ const schoolUniformItems = {
 const peUniformItems = ["T-Shirt", "Pants"];
 
 const timeSlots = [];
-
 for (let minutes = 8 * 60; minutes <= 16 * 60 + 55; minutes += 5) {
   const hour = Math.floor(minutes / 60);
   const minute = minutes % 60;
@@ -86,19 +26,12 @@ for (let minutes = 8 * 60; minutes <= 16 * 60 + 55; minutes += 5) {
 }
 
 function formatDate(date) {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
-    2,
-    "0"
-  )}-${String(date.getDate()).padStart(2, "0")}`;
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
 function ClothingCard({ title, selectedSize, onSelectSize }) {
   return (
-    <div
-      className={`bau-clothing-card ${
-        selectedSize ? "bau-clothing-card-selected" : ""
-      }`}
-    >
+    <div className={`bau-clothing-card ${selectedSize ? "bau-clothing-card-selected" : ""}`}>
       <h3>{title}</h3>
       <p>Select size</p>
 
@@ -107,9 +40,7 @@ function ClothingCard({ title, selectedSize, onSelectSize }) {
           <button
             key={size}
             type="button"
-            className={`bau-size-button ${
-              selectedSize === size ? "active" : ""
-            }`}
+            className={`bau-size-button ${selectedSize === size ? "active" : ""}`}
             aria-pressed={selectedSize === size}
             onClick={() => onSelectSize(size)}
           >
@@ -121,12 +52,7 @@ function ClothingCard({ title, selectedSize, onSelectSize }) {
   );
 }
 
-function PickupCalendar({
-  selectedDate,
-  selectedTime,
-  onSelectDate,
-  onSelectTime,
-}) {
+function PickupCalendar({ selectedDate, selectedTime, onSelectDate, onSelectTime }) {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -168,67 +94,25 @@ function PickupCalendar({
         <div className="hsu-calendar-column">
           <div className="hsu-calendar">
             <div className="hsu-calendar-header">
-              <button
-                type="button"
-                onClick={() => changeMonth(-1)}
-                disabled={
-                  year === today.getFullYear() &&
-                  month === today.getMonth()
-                }
-                aria-label="Previous month"
-              >
-                ‹
-              </button>
-
-              <h3>
-                {visibleMonth.toLocaleDateString("en-US", {
-                  month: "long",
-                  year: "numeric",
-                })}
-              </h3>
-
-              <button
-                type="button"
-                onClick={() => changeMonth(1)}
-                aria-label="Next month"
-              >
-                ›
-              </button>
+              <button type="button" onClick={() => changeMonth(-1)} disabled={year === today.getFullYear() && month === today.getMonth()} aria-label="Previous month">‹</button>
+              <h3>{visibleMonth.toLocaleDateString("en-US", { month: "long", year: "numeric" })}</h3>
+              <button type="button" onClick={() => changeMonth(1)} aria-label="Next month">›</button>
             </div>
 
             <div className="hsu-weekdays">
-              {["S", "M", "T", "W", "T", "F", "S"].map(
-                (day, index) => (
-                  <span key={`${day}-${index}`}>{day}</span>
-                )
-              )}
+              {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}
             </div>
 
             <div className="hsu-calendar-days">
               {days.map((day, index) => {
-                if (!day) {
-                  return <span key={`empty-${index}`} />;
-                }
-
+                if (!day) return <span key={`empty-${index}`} />;
                 const date = new Date(year, month, day);
                 date.setHours(0, 0, 0, 0);
-
                 const dateKey = formatDate(date);
                 const disabled = date < today;
 
                 return (
-                  <button
-                    key={day}
-                    type="button"
-                    disabled={disabled}
-                    className={
-                      selectedDate === dateKey ? "selected" : ""
-                    }
-                    onClick={() => {
-                      onSelectDate(dateKey);
-                      onSelectTime("");
-                    }}
-                  >
+                  <button key={day} type="button" disabled={disabled} className={selectedDate === dateKey ? "selected" : ""} onClick={() => { onSelectDate(dateKey); onSelectTime(""); }}>
                     {day}
                   </button>
                 );
@@ -239,32 +123,19 @@ function PickupCalendar({
 
         <div className="hsu-time-column">
           <h3>{selectedDateLabel}</h3>
-
           <div className="hsu-time-grid">
             {timeSlots.map((time) => (
-              <button
-                type="button"
-                key={time}
-                disabled={!selectedDate}
-                className={selectedTime === time ? "selected" : ""}
-                onClick={() => onSelectTime(time)}
-              >
+              <button type="button" key={time} disabled={!selectedDate} className={selectedTime === time ? "selected" : ""} onClick={() => onSelectTime(time)}>
                 {time}
               </button>
             ))}
           </div>
-
-          {!selectedTime && (
-            <p className="hsu-selection-hint">
-              Please select an appointment time.
-            </p>
-          )}
+          {!selectedTime && <p className="hsu-selection-hint">Please select an appointment time.</p>}
         </div>
       </div>
     </section>
   );
 }
-
 export default function Bau() {
   const [category, setCategory] = useState("");
   const [selectedBook, setSelectedBook] = useState("");
@@ -276,8 +147,48 @@ export default function Bau() {
   const [message, setMessage] = useState("");
   const [showTicket, setShowTicket] = useState(false);
   const [ticketNumber, setTicketNumber] = useState("");
+  
+  /* State to track and hold live database textbooks dynamically */
+  const [liveBooks, setLiveBooks] = useState([]);
 
-  const selectedBookDetails = books.find(
+  /* Fetch the active book listings from the sub_services relational tables */
+   /* Fetch the active book listings from the sub_services relational tables */
+   /* Fetch the active book listings from the sub_services relational tables */
+   /* Fetch the active book listings from the sub_services relational tables */
+  useEffect(() => {
+    fetch("http://localhost:5000/api/admin/services/10/sub-services")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          const formatted = data.map(b => {
+            /* Splitting by spaces, hyphens, or em-dashes uniformly */
+            const parts = String(b.name).split(/[\s—\-:\.]+/);
+            const extractedCode = parts && parts[0] ? parts[0].trim() : String(b.id);
+            
+            /* Reconstruct the title description cleanly by trimming out the prefix code sequence */
+            let extractedTitle = b.name;
+            const codeIndex = String(b.name).indexOf(extractedCode);
+            if (codeIndex !== -1) {
+              extractedTitle = String(b.name).substring(codeIndex + extractedCode.length).replace(/^[\s—\-:\.]+/, "").trim();
+            }
+
+            return {
+              id: b.id,
+              /* Re-align the canonical book catalog code numbers directly onto the code parameter fields */
+              code: extractedCode, 
+              title: extractedTitle,
+              price: parseFloat(b.fee) || 0.00, 
+              available: b.available
+            };
+          });
+          setLiveBooks(formatted.filter(b => b.available === 1 || b.available === true));
+        }
+      })
+      .catch((err) => console.error("Database books fetch failed:", err));
+  }, []);
+
+
+  const selectedBookDetails = liveBooks.find(
     (book) => book.code === selectedBook
   );
 
@@ -317,14 +228,11 @@ export default function Bau() {
   }
 
   function handleClothingSize(section, item, size) {
-    const updateSelections =
-      section === "school" ? setSchoolSelections : setPeSelections;
-
+    const updateSelections = section === "school" ? setSchoolSelections : setPeSelections;
     updateSelections((previous) => ({
       ...previous,
       [item]: previous[item] === size ? "" : size,
     }));
-
     setMessage("");
   }
 
@@ -339,10 +247,8 @@ export default function Bau() {
         setMessage("Please select Male or Female first.");
         return;
       }
-
       const missingSchoolItems = schoolUniformItems[gender].filter((item) => !schoolSelections[item]);
       const missingPeItems = peUniformItems.filter((item) => !peSelections[item]);
-
       if (missingSchoolItems.length || missingPeItems.length) {
         setMessage("Please select a size for every school uniform and PE uniform item.");
         return;
@@ -354,29 +260,29 @@ export default function Bau() {
       return;
     }
 
-    try {
+     try {
       setMessage("Saving transaction...");
       
-      // Determine explicit structural service string mappings based on chosen categories
-      const activeServiceString = category === "Books" ? "Books" : "Uniforms";
+      const chosenBookTitle = selectedBookDetails ? selectedBookDetails.title : "Books";
+      const bookFeeValue = selectedBookDetails ? String(selectedBookDetails.price) : "0.00";
 
       const appointment = await createAppointment({
-        officeCode: "BAU",
-        service: activeServiceString,
+        officeCode: "BAU", 
+        service: category === "Books" ? chosenBookTitle : "Uniforms",
         date: selectedDate,
         time: selectedTime,
         student: { name: "Juan Dela Cruz", program: "BSIT" },
-        feeText: category === "Books" ? `₱${selectedBookDetails.price.toFixed(2)}` : "Uniform Fee Setup",
+        feeText: category === "Books" ? bookFeeValue : "0.00",
         details: category === "Books" ? { type: "book", ...selectedBookDetails } : { type: "uniform", gender, schoolSelections, peSelections }
       });
 
-      window.location.href = `/ticket?id=${encodeURIComponent(appointment.id)}&service=${encodeURIComponent(activeServiceString)}`;
+      /* UPDATED ROUTE LINK: Passes the custom price variable directly into the active URL parameter loop matrix */
+      window.location.href = `/ticket?id=${encodeURIComponent(appointment.id)}&service=${encodeURIComponent(category === "Books" ? chosenBookTitle : "Uniforms")}&price=${encodeURIComponent(category === "Books" ? bookFeeValue : "0.00")}`;
     } catch (err) {
       setMessage("Failed to log entry: " + err.message);
     }
   }
-
-  if (showTicket) {
+   if (showTicket) {
     return (
       <div className="site-shell">
         <Navbar />
@@ -386,77 +292,68 @@ export default function Bau() {
 
           <section className="bau-ticket-card">
             <p className="bau-ticket-control-label">Control number</p>
-<h2 className="bau-ticket-control-number">{ticketNumber}</h2>
+            <h2 className="bau-ticket-control-number">{ticketNumber}</h2>
 
-<div className="bau-ticket-details">
-  <h3>BUSINESS AFFAIRS UNIT</h3>
+            <div className="bau-ticket-details">
+              <h3>BUSINESS AFFAIRS UNIT</h3>
 
-  <p><strong>Request type:</strong> {category}</p>
+              <p><strong>Request type:</strong> {category}</p>
 
-  {category === "Books" && selectedBookDetails && (
-    <>
-      <p><strong>Book:</strong> {selectedBookDetails.title}</p>
-      <p><strong>Book Code:</strong> {selectedBookDetails.code}</p>
-      <p><strong>Price:</strong> ₱{selectedBookDetails.price.toFixed(2)}</p>
-    </>
-  )}
+              {category === "Books" && selectedBookDetails && (
+                <>
+                  <p><strong>Book:</strong> {selectedBookDetails.title}</p>
+                  <p><strong>Book Code:</strong> {selectedBookDetails.code}</p>
+                  <p><strong>Price:</strong> ₱{selectedBookDetails.price.toFixed(2)}</p>
+                </>
+              )}
 
-  {category === "Uniform" && (
-    <>
-      <p><strong>Gender:</strong> {gender}</p>
+              {category === "Uniform" && (
+                <>
+                  <p><strong>Gender:</strong> {gender}</p>
 
-      <p><strong>School Uniform:</strong></p>
-      {Object.entries(schoolSelections).map(([item, size]) => (
-        <p key={item}>{item}: {size}</p>
-      ))}
+                  <p><strong>School Uniform:</strong></p>
+                  {Object.entries(schoolSelections).map(([item, size]) => (
+                    <p key={item}>{item}: {size}</p>
+                  ))}
 
-      <p><strong>PE Uniform:</strong></p>
-      {Object.entries(peSelections).map(([item, size]) => (
-        <p key={item}>{item}: {size}</p>
-      ))}
-    </>
-  )}
+                  <p><strong>PE Uniform:</strong></p>
+                  {Object.entries(peSelections).map(([item, size]) => (
+                    <p key={item}>{item}: {size}</p>
+                  ))}
+                </>
+              )}
 
-  <p>
-    <strong>Pickup Schedule:</strong>{" "}
-    {new Date(`${selectedDate}T00:00:00`).toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    })}
-    {" · "}{selectedTime}
-  </p>
+              <p>
+                <strong>Pickup Schedule:</strong>{" "}
+                {new Date(`${selectedDate}T00:00:00`).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+                {" · "}{selectedTime}
+              </p>
 
-  <p className="bau-ticket-note">
-    Please bring the necessary payment and requirements when claiming your items.
-  </p>
+              <p className="bau-ticket-note">
+                Please bring the necessary payment and requirements when claiming your items.
+              </p>
 
-  <p>Please keep a copy of your appointment ticket.</p>
-</div>
+              <p>Please keep a copy of your appointment ticket.</p>
+            </div>
 
-            <button
-  type="button"
-  className="bau-primary-button"
-  onClick={() => window.print()}
->
-  Save / Print Ticket
-</button>
+            <button type="button" className="bau-primary-button" onClick={() => window.print()}>
+              Save / Print Ticket
+            </button>
 
-<button
-  type="button"
-  className="bau-primary-button"
-  onClick={() => setShowTicket(false)}
->
-  Back to BAU
-</button>
+            <button type="button" className="bau-primary-button" onClick={() => setShowTicket(false)}>
+              Back to BAU
+            </button>
           </section>
         </main>
       </div>
     );
   }
-
-  return (
+    return (
     <div className="site-shell">
       <Navbar />
 
@@ -542,8 +439,7 @@ export default function Bau() {
             </div>
           </section>
         )}
-
-        {category === "Books" && (
+  {category === "Books" && (
           <>
             <section className="bau-panel">
               <div className="bau-panel-heading">
@@ -561,7 +457,7 @@ export default function Bau() {
                   }}
                 >
                   <option value="">-- Choose a book --</option>
-                  {books.map((book) => (
+                  {liveBooks.map((book) => (
                     <option key={book.code} value={book.code}>
                       {book.title}
                     </option>
@@ -689,8 +585,7 @@ export default function Bau() {
             )}
           </>
         )}
-
-        {category === "Graduation Picture" && (
+          {category === "Graduation Picture" && (
           <section className="bau-panel bau-info-panel">
             <div className="bau-large-icon" aria-hidden="true">
               📸

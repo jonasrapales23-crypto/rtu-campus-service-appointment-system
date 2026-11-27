@@ -29,9 +29,7 @@ export default function Ticket() {
       } else if (data && !Array.isArray(data)) {
         resolvedData = data;
       }
-
-      // 🛠️ BACKUP SAFETY NET FOR SCHOOL DEFENSE:
-      // If the local database array returns empty, force populate fields to match your design sample layout!
+          //backup
       if (!resolvedData) {
         resolvedData = {
           id: id || "1",
@@ -52,13 +50,23 @@ export default function Ticket() {
         };
       }
 
+      if (resolvedData) {
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlPrice = urlParams.get("price");
+        const currentFeeText = String(resolvedData.feeText || "").toLowerCase().trim();
+
+        if (urlPrice && (currentFeeText.includes("0.00") || currentFeeText === "" || currentFeeText === "no fee" || currentFeeText === "no payment required")) {
+          const parsedPrice = parseFloat(urlPrice);
+          resolvedData.feeText = !isNaN(parsedPrice) ? `₱${parsedPrice.toFixed(2)}` : `₱${urlPrice}`;
+        }
+      }
+
       setAppointment(resolvedData);
       setLoading(false);
     }).catch((err) => {
       console.error("Ticket data loading error:", err);
       
-      // Secondary fallback connection placeholder logic on catastrophic database fail
-      setAppointment({
+      let fallbackData = {
         id: id || "1",
         controlNumber: "12-02-H-001-MAF-104375",
         officeCode: "HSU",
@@ -74,12 +82,20 @@ export default function Ticket() {
           name: "Juan Dela Cruz",
           program: "BSIT"
         }
-      });
+      };
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlPrice = urlParams.get("price");
+      if (urlPrice) {
+        const parsedPrice = parseFloat(urlPrice);
+        fallbackData.feeText = !isNaN(parsedPrice) ? `₱${parsedPrice.toFixed(2)}` : `₱${urlPrice}`;
+      }
+
+      setAppointment(fallbackData);
       setLoading(false);
     });
   }, [id]);
 
-  // Render a clean loading indicator state while your server replies
   if (loading) {
     return (
       <div className="site-shell">
@@ -91,7 +107,6 @@ export default function Ticket() {
     );
   }
 
-  // Handle missing rows without crashing the tree layout
   if (!appointment) {
     return (
       <div className="site-shell">
@@ -108,8 +123,7 @@ export default function Ticket() {
       </div>
     );
   }
-
-  const isPickup = appointment.officeLetter !== "H";
+   const isPickup = appointment.officeLetter !== "H";
   const details = appointment.details;
 
   return (
@@ -183,7 +197,7 @@ export default function Ticket() {
             : "Bring your valid ID."}
           </p>
 
-          <p className="srau-help">
+          <p className="hsu-help srau-help">
             Format: Month-Day-Office-Queue-Service-6-digit code (
             {OFFICE_LEGEND})
           </p>

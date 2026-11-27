@@ -68,7 +68,17 @@ function formatAppointment(item) {
     "Student ID": "SID"
   };
 
-  const abbreviationCode = serviceCodes[cleanService] || cleanService.substring(0, 3).toUpperCase();
+    let abbreviationCode = serviceCodes[cleanService];
+
+  if (!abbreviationCode) {
+    const checkText = String(cleanService).toLowerCase();
+    /* If the service label points to a dynamic textbook title, force the global BKS token code */
+    if (checkText.includes("book") || checkText.includes("testing") || checkText.includes("management") || checkText.includes("history") || checkText.includes("contracts") || checkText.includes("purposive")) {
+      abbreviationCode = "BKS";
+    } else {
+      abbreviationCode = cleanService.substring(0, 3).toUpperCase();
+    }
+  }
   const parts = String(rawDate).split("-");
   const month = parts[1] || "11";
   const day = parts[2] || "17";
@@ -86,7 +96,8 @@ function formatAppointment(item) {
                            currentStatus === "no-show" ? "No-show" : "Submitted";
 
   // Professional mapping layer to enforce numeric PHP currency styling across frontend user views
-  const incomingFee = item.feeText || item.fee || "0.00";
+  // Prioritize row metrics over static categories presets 
+  const incomingFee = item.feeText || item.fee || item.fee_text || "0.00";
   const cleanNumericString = String(incomingFee).replace(/[^0-9.]/g, "");
   const parsedPriceFloat = parseFloat(cleanNumericString);
   const formattedFeeOutput = !isNaN(parsedPriceFloat) ? `₱${parsedPriceFloat.toFixed(2)}` : "₱0.00";
@@ -320,4 +331,26 @@ export async function updateServiceFee(serviceId, feeText, adminName) {
     console.error("Failed to update service fee:", err);
     return null;
   }
+}
+export async function fetchSubServices(serviceId) {
+  const response = await fetch(`${BACKEND_URL}/admin/services/${serviceId}/sub-services`);
+  return response.ok ? await response.json() : [];
+}
+
+export async function createSubService(serviceId, payload) {
+  const response = await fetch(`${BACKEND_URL}/admin/services/${serviceId}/sub-services`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return response.ok ? await response.json() : null;
+}
+
+export async function updateBatchSubServices(items, adminName) {
+  const response = await fetch(`${BACKEND_URL}/admin/sub-services/batch`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items, adminName }),
+  });
+  return response.ok ? await response.json() : null;
 }
