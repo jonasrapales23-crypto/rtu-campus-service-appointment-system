@@ -2,7 +2,11 @@ import { useMemo, useState } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
 import "../../styles/hsu.css";
-
+import {
+  Stethoscope,
+  HeartPulse,
+  BadgeCheck,
+} from "lucide-react";
 const services = [
   {
     id: "freshmen",
@@ -287,23 +291,29 @@ export default function Hsu() {
                   {services
                     .filter((service) => service.category === category)
                     .map((service) => (
-                      <button
-                        type="button"
-                        className="hsu-service-option"
-                        key={service.id}
-                        onClick={() => chooseService(service)}
-                      >
-                        <span className="hsu-service-icon">
-                          {service.id === "dental" ? "🦷" : "🩺"}
-                        </span>
+                      
+<button
+  type="button"
+  className="hsu-service-option"
+  key={service.id}
+  onClick={() => chooseService(service)}
+>
+  <span className="hsu-service-icon" aria-hidden="true">
+    {service.id === "dental" ? (
+      <BadgeCheck size={20} strokeWidth={1.8} />
+    ) : (
+      <Stethoscope size={20} strokeWidth={1.8} />
+    )}
+  </span>
 
-                        <span className="hsu-service-copy">
-                          <strong>{service.title}</strong>
-                          <small>{service.duration} mins · Free</small>
-                        </span>
+  <span className="hsu-service-copy">
+    <strong>{service.title}</strong>
+    <small>{service.description}</small>
+  </span>
 
-                        <span className="hsu-service-arrow">›</span>
-                      </button>
+  <span className="hsu-service-arrow">›</span>
+</button>
+
                     ))}
                 </div>
               ))}

@@ -1,13 +1,37 @@
-import { useState } from "react";
+
+import { useMemo, useState } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
+import "../../styles/hsu.css";
 import "../../styles/Srau.css";
+import {
+  FileText,
+  Award,
+  Stamp,
+  ScrollText,
+} from "lucide-react";
 
 const services = [
-  "Transcript of Records",
-  "Certificates",
-  "CTC / Authentication",
-  "Diploma",
+  {
+    id: "tor",
+    title: "Transcript of Records",
+    description: "Request an official copy of your academic records.",
+  },
+  {
+    id: "certificates",
+    title: "Certificates",
+    description: "Request school-related certificates.",
+  },
+  {
+    id: "ctc",
+    title: "CTC / Authentication",
+    description: "Request certified true copies or authentication.",
+  },
+  {
+    id: "diploma",
+    title: "Diploma",
+    description: "Request a copy or replacement of your diploma.",
+  },
 ];
 
 const timeSlots = [
@@ -32,9 +56,7 @@ function addWorkingDays(date, count) {
   while (added < count) {
     result.setDate(result.getDate() + 1);
 
-    const day = result.getDay();
-
-    if (day !== 0 && day !== 6) {
+    if (result.getDay() !== 0 && result.getDay() !== 6) {
       added++;
     }
   }
@@ -42,7 +64,16 @@ function addWorkingDays(date, count) {
   return result;
 }
 
-function dateKey(date) {
+function formatDate(date) {
+  return date.toLocaleDateString("en-US", {
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function getDateKey(date) {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
@@ -50,30 +81,14 @@ function dateKey(date) {
   return `${year}-${month}-${day}`;
 }
 
-function formatDate(date) {
-  return date.toLocaleDateString("en-US", {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-function getMonthLabel(date) {
-  return date.toLocaleDateString("en-US", {
-    month: "long",
-    year: "numeric",
-  });
-}
-
 function UploadBox({ title, note, file, onChange }) {
   return (
     <label className="srau-upload-box">
-      <span className="upload-icon" aria-hidden="true">
-        📄 ↑
+      <span className="srau-upload-symbol" aria-hidden="true">
+        ↑
       </span>
 
-      <span>{title}</span>
+      <strong>{title}</strong>
 
       {file ? (
         <span className="upload-file-name">{file.name}</span>
@@ -94,60 +109,25 @@ function UploadBox({ title, note, file, onChange }) {
   );
 }
 
-export default function Srau() {
-  const [service, setService] = useState("Transcript of Records");
-  const [torLevel, setTorLevel] = useState("College");
-  const [validId, setValidId] = useState(null);
-  const [requiredDocument, setRequiredDocument] = useState(null);
-  const [claimant, setClaimant] = useState("");
-  const [authorizationLetter, setAuthorizationLetter] = useState(null);
-  const [receiverId, setReceiverId] = useState(null);
-  const [receiverName, setReceiverName] = useState("");
-  const [selectedTime, setSelectedTime] = useState("9:00 AM");
-  const [message, setMessage] = useState("");
-
-  // Demo processing rule: five working days before pickup.
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const earliestPickup = addWorkingDays(today, 5);
-
-  const [selectedDate, setSelectedDate] = useState(
-    () => dateKey(addWorkingDays(new Date(), 5))
+function Calendar({ selectedDate, onSelectDate, earliestPickup }) {
+  const [visibleMonth, setVisibleMonth] = useState(
+    () =>
+      new Date(
+        earliestPickup.getFullYear(),
+        earliestPickup.getMonth(),
+        1
+      )
   );
 
-  const [visibleMonth, setVisibleMonth] = useState(() => {
-    const earliest = addWorkingDays(new Date(), 5);
+  const year = visibleMonth.getFullYear();
+  const month = visibleMonth.getMonth();
 
-    return new Date(
-      earliest.getFullYear(),
-      earliest.getMonth(),
-      1
-    );
-  });
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Build the calendar dynamically for the visible month.
-  const calendarYear = visibleMonth.getFullYear();
-  const calendarMonth = visibleMonth.getMonth();
-
-  const firstWeekday = new Date(
-    calendarYear,
-    calendarMonth,
-    1
-  ).getDay();
-
-  const daysInMonth = new Date(
-    calendarYear,
-    calendarMonth + 1,
-    0
-  ).getDate();
-
-  const calendarCells = [
-    ...Array(firstWeekday).fill(null),
-    ...Array.from(
-      { length: daysInMonth },
-      (_, index) => index + 1
-    ),
+  const days = [
+    ...Array(firstDay).fill(null),
+    ...Array.from({ length: daysInMonth }, (_, index) => index + 1),
   ];
 
   const minimumMonth = new Date(
@@ -155,9 +135,6 @@ export default function Srau() {
     earliestPickup.getMonth(),
     1
   );
-
-  const canGoToPreviousMonth =
-    visibleMonth.getTime() > minimumMonth.getTime();
 
   function changeMonth(amount) {
     setVisibleMonth((current) => {
@@ -167,49 +144,153 @@ export default function Srau() {
         1
       );
 
-      if (next < minimumMonth) {
-        return minimumMonth;
-      }
-
-      return next;
+      return next < minimumMonth ? minimumMonth : next;
     });
   }
 
-  function chooseDate(day) {
-    const date = new Date(
-      calendarYear,
-      calendarMonth,
-      day
-    );
+  return (
+    <div className="hsu-calendar">
+      <div className="hsu-calendar-header">
+        <button
+          type="button"
+          onClick={() => changeMonth(-1)}
+          disabled={visibleMonth.getTime() <= minimumMonth.getTime()}
+          aria-label="Previous month"
+        >
+          ‹
+        </button>
 
+        <h3>
+          {visibleMonth.toLocaleDateString("en-US", {
+            month: "long",
+            year: "numeric",
+          })}
+        </h3>
+
+        <button
+          type="button"
+          onClick={() => changeMonth(1)}
+          aria-label="Next month"
+        >
+          ›
+        </button>
+      </div>
+
+      <div className="hsu-weekdays">
+        {["S", "M", "T", "W", "T", "F", "S"].map((day, index) => (
+          <span key={`${day}-${index}`}>{day}</span>
+        ))}
+      </div>
+
+      <div className="hsu-calendar-days">
+        {days.map((day, index) => {
+          if (!day) {
+            return <span key={`empty-${index}`} />;
+          }
+
+          const date = new Date(year, month, day);
+          date.setHours(0, 0, 0, 0);
+
+          const disabled = date < earliestPickup;
+          const selected = getDateKey(date) === getDateKey(selectedDate);
+
+          return (
+            <button
+              key={day}
+              type="button"
+              disabled={disabled}
+              className={selected ? "selected" : ""}
+              onClick={() => onSelectDate(date)}
+              aria-pressed={selected}
+            >
+              {day}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+export default function Srau() {
+  const [step, setStep] = useState("services");
+  const [service, setService] = useState(services[0]);
+  const [torLevel, setTorLevel] = useState("College");
+
+  const [validId, setValidId] = useState(null);
+  const [requiredDocument, setRequiredDocument] = useState(null);
+
+  const [claimant, setClaimant] = useState("");
+  const [authorizationLetter, setAuthorizationLetter] = useState(null);
+  const [receiverId, setReceiverId] = useState(null);
+  const [receiverName, setReceiverName] = useState("");
+
+  const [selectedDate, setSelectedDate] = useState(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return addWorkingDays(today, 5);
+  });
+
+  const [selectedTime, setSelectedTime] = useState("9:00 AM");
+  const [ticketNumber, setTicketNumber] = useState("");
+  const [message, setMessage] = useState("");
+
+  const today = useMemo(() => {
+    const date = new Date();
     date.setHours(0, 0, 0, 0);
+    return date;
+  }, []);
 
-    if (date < earliestPickup) {
-      return;
-    }
+  const earliestPickup = useMemo(
+    () => addWorkingDays(today, 5),
+    [today]
+  );
 
-    setSelectedDate(dateKey(date));
+  const selectedDateLabel = formatDate(selectedDate);
+
+  const fee = service.id === "tor"
+    ? torLevel === "College"
+      ? 380
+      : torLevel === "Master's"
+        ? 530
+        : 780
+    : service.id === "ctc"
+      ? 150
+      : service.id === "certificates"
+        ? 150
+        : 500;
+
+  function chooseService(item) {
+    setService(item);
+    setStep("booking");
+    setMessage("");
+    setSelectedTime("9:00 AM");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function updateFile(setter, event) {
+    setter(event.target.files?.[0] || null);
     setMessage("");
   }
 
-  function handleGenerateTicket() {
+  function handleSubmit(event) {
+    event.preventDefault();
     setMessage("");
 
     if (!validId || !requiredDocument) {
-      setMessage(
-        "Please upload your valid ID and required document."
-      );
+      setMessage("Please upload your valid ID and required document.");
+      return;
+    }
+
+    if (!claimant) {
+      setMessage("Please select who will claim the document.");
       return;
     }
 
     if (claimant === "someone-else") {
-      if (
-        !authorizationLetter ||
-        !receiverId ||
-        !receiverName.trim()
-      ) {
+      if (!authorizationLetter || !receiverId || !receiverName.trim()) {
         setMessage(
-          "Please complete the receiver details and upload the required documents."
+          "Please complete the receiver details and upload the authorization letter and receiver's ID."
         );
         return;
       }
@@ -220,308 +301,362 @@ export default function Srau() {
       return;
     }
 
-    setMessage(
-      "Your selections are ready. Ticket generation will be available when the backend is connected."
-    );
+    const randomNumber = Math.floor(100000 + Math.random() * 900000);
+
+    setTicketNumber(`SRAU-${randomNumber}`);
+    setStep("ticket");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function startOver() {
+    setStep("services");
+    setService(services[0]);
+    setTorLevel("College");
+
+    setValidId(null);
+    setRequiredDocument(null);
+
+    setClaimant("");
+    setAuthorizationLetter(null);
+    setReceiverId(null);
+    setReceiverName("");
+
+    setSelectedDate(earliestPickup);
+    setSelectedTime("9:00 AM");
+    setTicketNumber("");
+    setMessage("");
+
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
     <div className="site-shell">
       <Navbar />
 
-      <main className="srau-main">
-        <h1 className="srau-title">
-          University Registrar's Office (SRAU)
-        </h1>
-
-        {/* 1. Choose a service */}
-        <section className="srau-section">
-          <h2>1 · Choose a service</h2>
-
-          
-<div className="srau-service-grid">
-  {services.map((item) => (
-    <div className="srau-service-item" key={item}>
-      <button
-        type="button"
-        className={`srau-service-option ${
-          service === item ? "selected" : ""
-        }`}
-        onClick={() => setService(item)}
-        aria-pressed={service === item}
-      >
-        {item}
-        {item === "Transcript of Records" && " ▾"}
-      </button>
-
-      {item === "Transcript of Records" &&
-        service === "Transcript of Records" && (
-          <select
-            className="srau-tor-level"
-            value={torLevel}
-            onChange={(event) => setTorLevel(event.target.value)}
-            aria-label="Transcript of Records academic level"
-          >
-            <option value="College">College</option>
-            <option value="Master's">Master's</option>
-            <option value="Doctor's">Doctor's</option>
-          </select>
+      <main className="hsu-main srau-main">
+        {step !== "ticket" && (
+          <header className="hsu-page-heading">
+            <p className="hsu-eyebrow">RTU CAMPUS SERVICES</p>
+            <h1>University Registrar's Office (SRAU)</h1>
+            <p>
+              Request your academic documents and schedule your pickup
+              through the University Registrar's Office.
+            </p>
+          </header>
         )}
-    </div>
-  ))}
-</div>
 
-<div className="srau-fee-note">
-  <strong>Fee:</strong>{" "}
-  {service === "Transcript of Records"
-    ? `₱${
-        torLevel === "College"
-          ? 350
-          : torLevel === "Master's"
-          ? 500
-          : 750
-      } + ₱30 document stamp = ₱${
-        torLevel === "College"
-          ? 380
-          : torLevel === "Master's"
-          ? 530
-          : 780
-      }`
-    : service === "CTC / Authentication"
-    ? "₱150"
-    : service === "Certificates"
-    ? "₱150"
-    : "₱500"}
-  {" · "}
-  <strong>Processing:</strong> 5 working days. The office
-  prepares your document before you arrive.
-</div>
+        {step === "services" && (
+          <>
+            <div className="hsu-step-heading">
+              <button
+                type="button"
+                className="hsu-back-button"
+                onClick={() => window.history.back()}
+              >
+                ‹
+              </button>
+              <h2>Select a service</h2>
+            </div>
 
-        </section>
-
-        {/* 2. Upload requirements */}
-        <section className="srau-section">
-          <h2>2 · Upload requirements</h2>
-
-          <div className="srau-upload-grid">
-            <UploadBox
-              title="Valid ID"
-              note="No file selected"
-              file={validId}
-              onChange={(event) =>
-                setValidId(event.target.files?.[0] || null)
-              }
-            />
-
-            <UploadBox
-              title="Required document"
-              note="Set by the office"
-              file={requiredDocument}
-              onChange={(event) =>
-                setRequiredDocument(event.target.files?.[0] || null)
-              }
-            />
-          </div>
-
-          <p className="srau-help">
-            Upload your requirements. Accepted files: PDF, JPG,
-            JPEG, or PNG.
-          </p>
-        </section>
-
-        {/* 3. Claimant */}
-        <section className="srau-section">
-          <h2>3 · Who will claim the document?</h2>
-
-          <select
-            className="srau-claimant-select"
-            value={claimant}
-            onChange={(event) => setClaimant(event.target.value)}
-            aria-label="Who will claim the document?"
-          >
-            <option value="">
-              Select who will claim the document
-            </option>
-            <option value="me">Me</option>
-            <option value="someone-else">Someone else</option>
-          </select>
-
-          {claimant === "someone-else" && (
-            <>
-              <div className="srau-upload-grid srau-claimant-files">
-                <UploadBox
-                  title="Authorization letter"
-                  note="No file selected"
-                  file={authorizationLetter}
-                  onChange={(event) =>
-                    setAuthorizationLetter(
-                      event.target.files?.[0] || null
-                    )
-                  }
-                />
-
-                <UploadBox
-                  title="Receiver's valid ID"
-                  note="No file selected"
-                  file={receiverId}
-                  onChange={(event) =>
-                    setReceiverId(
-                      event.target.files?.[0] || null
-                    )
-                  }
-                />
+            <section className="hsu-panel">
+              <div className="hsu-panel-heading">
+                <h2>Available Services</h2>
+                <p>Choose the document or service you need.</p>
               </div>
 
-              <label className="srau-receiver-name">
-                Full name of the receiver
+              <div className="srau-service-list">
+                {services.map((item) => (
+                  <button
+                    type="button"
+                    className="hsu-service-option"
+                    key={item.id}
+                    onClick={() => chooseService(item)}
+                  >
+                    <span
+  className="hsu-service-icon srau-service-icon"
+  aria-hidden="true"
+>
+  {item.id === "tor" ? (
+    <FileText size={20} strokeWidth={1.8} />
+  ) : item.id === "certificates" ? (
+    <Award size={20} strokeWidth={1.8} />
+  ) : item.id === "ctc" ? (
+    <Stamp size={20} strokeWidth={1.8} />
+  ) : (
+    <ScrollText size={20} strokeWidth={1.8} />
+  )}
+</span>
 
-                <input
-                  type="text"
-                  value={receiverName}
-                  onChange={(event) =>
-                    setReceiverName(event.target.value)
-                  }
-                  placeholder="Enter receiver's full name"
-                />
-              </label>
-            </>
-          )}
-        </section>
+                    <span className="hsu-service-copy">
+                      <strong>{item.title}</strong>
+                      <small>{item.description}</small>
+                    </span>
 
-        {/* 4. Pickup calendar and time */}
-        <section className="srau-section">
-          <h2>4 · Pick a pickup date and time</h2>
+                    <span className="hsu-service-arrow">›</span>
+                  </button>
+                ))}
+              </div>
+            </section>
+          </>
+        )}
 
-          <p className="srau-earliest">
-            Earliest pickup: {formatDate(earliestPickup)} (after processing).
-          </p>
+        {step === "booking" && (
+          <>
+            <div className="hsu-step-heading">
+              <button
+                type="button"
+                className="hsu-back-button"
+                onClick={() => setStep("services")}
+              >
+                ‹
+              </button>
+              <h2>Complete your document request</h2>
+            </div>
 
-          <div className="srau-schedule">
-            <div className="srau-calendar">
-              <div className="srau-calendar-header">
-                <button
-                  type="button"
-                  onClick={() => changeMonth(-1)}
-                  disabled={!canGoToPreviousMonth}
-                  aria-label="Previous month"
-                >
-                  ‹
-                </button>
+            <form className="hsu-booking-form" onSubmit={handleSubmit}>
+              <section className="hsu-panel">
+                <div className="hsu-panel-heading">
+                  <h2>1 · Selected service</h2>
+                  <p>{service.title}</p>
+                </div>
 
-                <h3>{getMonthLabel(visibleMonth)}</h3>
+                {service.id === "tor" && (
+                  <label className="hsu-form-field">
+                    <span>Academic Level *</span>
+                    <select
+                      className="srau-level-select"
+                      value={torLevel}
+                      onChange={(event) => setTorLevel(event.target.value)}
+                    >
+                      <option value="College">College</option>
+                      <option value="Master's">Master's</option>
+                      <option value="Doctor's">Doctor's</option>
+                    </select>
+                  </label>
+                )}
 
-                <button
-                  type="button"
-                  onClick={() => changeMonth(1)}
-                  aria-label="Next month"
-                >
-                  ›
+                <div className="srau-fee-note">
+                  <strong>Fee:</strong>{" "}
+                  {service.id === "tor"
+                    ? `₱${fee - 30} + ₱30 document stamp = ₱${fee}`
+                    : `₱${fee}`}
+                  {" · "}
+                  <strong>Processing:</strong> 5 working days
+                </div>
+              </section>
+
+              <section className="hsu-panel">
+                <div className="hsu-panel-heading">
+                  <h2>2 · Upload requirements</h2>
+                  <p>
+                    Upload clear copies of the required documents.
+                    Accepted files: PDF, JPG, JPEG, and PNG.
+                  </p>
+                </div>
+
+                <div className="srau-upload-grid">
+                  <UploadBox
+                    title="Valid ID *"
+                    note="Upload a copy of your valid ID"
+                    file={validId}
+                    onChange={(event) => updateFile(setValidId, event)}
+                  />
+
+                  <UploadBox
+                    title="Required document *"
+                    note="Upload the document required by the office"
+                    file={requiredDocument}
+                    onChange={(event) =>
+                      updateFile(setRequiredDocument, event)
+                    }
+                  />
+                </div>
+              </section>
+
+              <section className="hsu-panel">
+                <div className="hsu-panel-heading">
+                  <h2>3 · Who will claim the document?</h2>
+                  <p>Select who will personally pick up the requested document.</p>
+                </div>
+
+                <label className="hsu-form-field">
+                  <span>Claimant *</span>
+                  <select
+                    className="srau-level-select"
+                    value={claimant}
+                    onChange={(event) => {
+                      setClaimant(event.target.value);
+                      setMessage("");
+                    }}
+                    required
+                  >
+                    <option value="">Select who will claim the document</option>
+                    <option value="me">I will claim it myself</option>
+                    <option value="someone-else">Someone else will claim it</option>
+                  </select>
+                </label>
+
+                {claimant === "someone-else" && (
+                  <div className="srau-claimant-extra">
+                    <div className="srau-upload-grid">
+                      <UploadBox
+                        title="Authorization letter *"
+                        note="Upload the signed authorization letter"
+                        file={authorizationLetter}
+                        onChange={(event) =>
+                          updateFile(setAuthorizationLetter, event)
+                        }
+                      />
+
+                      <UploadBox
+                        title="Receiver's valid ID *"
+                        note="Upload the receiver's valid ID"
+                        file={receiverId}
+                        onChange={(event) => updateFile(setReceiverId, event)}
+                      />
+                    </div>
+
+                    <label className="hsu-form-field">
+                      <span>Full name of the receiver *</span>
+                      <input
+                        type="text"
+                        value={receiverName}
+                        onChange={(event) => setReceiverName(event.target.value)}
+                        placeholder="Enter receiver's full name"
+                        required
+                      />
+                    </label>
+                  </div>
+                )}
+              </section>
+
+              <section className="hsu-panel hsu-schedule-panel">
+                <div className="hsu-panel-heading">
+                  <h2>4 · Pick a pickup date and time</h2>
+                  <p>
+                    {service.title} · ₱{fee}
+                  </p>
+                  <p>
+                    Earliest pickup: {formatDate(earliestPickup)}.
+                    Your document needs five working days of processing.
+                  </p>
+                </div>
+
+                <div className="hsu-booking-form-schedule">
+                  <div>
+                    <Calendar
+                      selectedDate={selectedDate}
+                      earliestPickup={earliestPickup}
+                      onSelectDate={(date) => {
+                        setSelectedDate(date);
+                        setMessage("");
+                      }}
+                    />
+                  </div>
+
+                  <div className="hsu-time-column">
+                    <h3>{selectedDateLabel}</h3>
+
+                    <div className="hsu-time-grid">
+                      {timeSlots.map((slot) => {
+                        const unavailable = slot.left === 0;
+
+                        return (
+                          <button
+                            key={slot.time}
+                            type="button"
+                            disabled={unavailable}
+                            className={
+                              selectedTime === slot.time ? "selected" : ""
+                            }
+                            onClick={() => {
+                              setSelectedTime(slot.time);
+                              setMessage("");
+                            }}
+                          >
+                            {slot.time}
+                            {unavailable ? " · Full" : ` · ${slot.left} left`}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {message && (
+                <p className="srau-message" role="alert">
+                  {message}
+                </p>
+              )}
+
+              <div className="hsu-booking-submit">
+                <button type="submit" className="hsu-primary-button">
+                  Generate Ticket
                 </button>
               </div>
+            </form>
+          </>
+        )}
 
-              <div className="srau-weekdays">
-                {["S", "M", "T", "W", "T", "F", "S"].map(
-                  (day, index) => (
-                    <span key={`${day}-${index}`}>{day}</span>
-                  )
+        {step === "ticket" && (
+          <section className="hsu-ticket-page">
+            <h1>Your pickup ticket</h1>
+
+            <div className="hsu-ticket-card">
+              <p className="hsu-ticket-label">Control number</p>
+              <h2>{ticketNumber}</h2>
+
+              <div className="hsu-ticket-details">
+                <p><strong>UNIVERSITY REGISTRAR'S OFFICE (SRAU)</strong></p>
+                <p>{service.title}</p>
+                {service.id === "tor" && <p>{torLevel} Level</p>}
+                <p>Claimant: {claimant === "me" ? "Self" : receiverName}</p>
+                <p>{selectedDateLabel} · {selectedTime}</p>
+              </div>
+
+              <div className="srau-ticket-files">
+                <p><strong>Uploaded requirements</strong></p>
+                <p>Valid ID: {validId?.name}</p>
+                <p>Required document: {requiredDocument?.name}</p>
+                {claimant === "someone-else" && (
+                  <>
+                    <p>Authorization letter: {authorizationLetter?.name}</p>
+                    <p>Receiver's ID: {receiverId?.name}</p>
+                  </>
                 )}
               </div>
 
-              <div className="srau-calendar-days">
-                {calendarCells.map((day, index) => {
-                  if (day === null) {
-                    return (
-                      <span
-                        className="srau-calendar-empty"
-                        key={`empty-${index}`}
-                      />
-                    );
-                  }
-
-                  const date = new Date(
-                    calendarYear,
-                    calendarMonth,
-                    day
-                  );
-
-                  date.setHours(0, 0, 0, 0);
-
-                  const disabled = date < earliestPickup;
-                  const isSelected = dateKey(date) === selectedDate;
-
-                  return (
-                    <button
-                      key={dateKey(date)}
-                      type="button"
-                      disabled={disabled}
-                      className={isSelected ? "selected" : ""}
-                      onClick={() => chooseDate(day)}
-                      aria-pressed={isSelected}
-                      aria-label={formatDate(date)}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
+              <div className="hsu-ticket-note">
+                Document fee: <strong>₱{fee}</strong>
               </div>
-            </div>
 
-            <div className="srau-time-panel">
-              <p className="srau-selected-date">
-                {selectedDate
-                  ? formatDate(
-                      new Date(`${selectedDate}T00:00:00`)
-                    )
-                  : "Choose a pickup date"}
+              <p className="hsu-ticket-format">
+                Please keep a copy of your ticket and bring your original
+                identification documents when claiming your request.
               </p>
 
-              <div className="srau-time-slots">
-                {timeSlots.map((slot) => {
-                  const unavailable = slot.left === 0;
+              <div className="hsu-ticket-actions">
+                <button
+                  type="button"
+                  className="hsu-primary-button"
+                  onClick={() => window.print()}
+                >
+                  Save / Print Ticket
+                </button>
 
-                  return (
-                    <button
-                      key={slot.time}
-                      type="button"
-                      disabled={unavailable || !selectedDate}
-                      className={
-                        selectedTime === slot.time
-                          ? "selected"
-                          : ""
-                      }
-                      onClick={() => {
-                        setSelectedTime(slot.time);
-                        setMessage("");
-                      }}
-                    >
-                      <span>{slot.time}</span>
-                      <span>
-                        {unavailable ? "Full" : `${slot.left} left`}
-                      </span>
-                    </button>
-                  );
-                })}
+                <button
+                  type="button"
+                  className="hsu-secondary-button"
+                  onClick={startOver}
+                >
+                  Back to SRAU
+                </button>
               </div>
             </div>
-          </div>
-        </section>
-
-        {message && (
-          <p className="srau-message" role="status">
-            {message}
-          </p>
+          </section>
         )}
-
-        <button
-          className="srau-generate-button"
-          type="button"
-          onClick={handleGenerateTicket}
-        >
-          Generate ticket
-        </button>
       </main>
     </div>
   );
 }
-
-

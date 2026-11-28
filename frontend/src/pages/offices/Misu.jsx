@@ -3,31 +3,38 @@ import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
 import "../../styles/hsu.css";
 import "../../styles/misu.css";
+import {
+  Receipt,
+  FileText,
+  ClipboardList,
+  IdCard,
+} from "lucide-react";
 
 const services = [
   {
     id: "receipt",
     title: "Receipt",
-    description: "Request a first-time receipt or reprint an existing receipt.",
-    icon: "🧾",
+    description:
+      "Request a first-time receipt or reprint an existing receipt.",
+    icon: <Receipt size={20} strokeWidth={1.8} />,
   },
   {
     id: "grade-slip",
     title: "Grade Slip",
     description: "Request your student grade slip.",
-    icon: "📄",
+    icon: <FileText size={20} strokeWidth={1.8} />,
   },
   {
     id: "regiform",
     title: "Registration Form",
     description: "Request a copy of your registration form.",
-    icon: "📋",
+    icon: <ClipboardList size={20} strokeWidth={1.8} />,
   },
   {
     id: "id",
     title: "Student ID",
     description: "Request a new student ID or a replacement.",
-    icon: "🪪",
+    icon: <IdCard size={20} strokeWidth={1.8} />,
   },
 ];
 

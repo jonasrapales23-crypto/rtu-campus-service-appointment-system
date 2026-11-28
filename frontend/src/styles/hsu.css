@@ -808,3 +808,15 @@
     break-inside: avoid;
   }
 }
+.hsu-service-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #2442c5;
+}
+
+.hsu-service-icon svg {
+  width: 20px;
+  height: 20px;
+}

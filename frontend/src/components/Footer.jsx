@@ -1,8 +1,14 @@
+
 export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-brand">
-        <span className="rtu-badge">RTU</span>
+        <img
+          src="/rtu-logo.png"
+          alt="Rizal Technological University Logo"
+          className="footer-logo"
+        />
+
         <span>Rizal Technological University</span>
       </div>
 

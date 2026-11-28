@@ -1,7 +1,15 @@
 import { useState } from "react";
 import Navbar from "../../navbar/Navbar.jsx";
 import "../../styles/Login.css";
+import "../../styles/hsu.css";
 import "../../styles/bau.css";
+import {
+  BookOpen,
+  Shirt,
+  Camera,
+  GraduationCap,
+  Store,
+} from "lucide-react";
 
 const books = [
   { code: "6617", title: "Treasury Management", price: 325 },
@@ -62,14 +70,137 @@ const books = [
   },
 ];
 
-const sizes = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
+const sizes = ["S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL"];
 
-const schoolUniformItems = {
-  Male: ["Polo", "Pants"],
-  Female: ["Blouse", "Pants", "Skirt"],
+// Sizes, measurements and prices copied from the BAU size charts.
+const shirtChart = {
+  columns: ["Shoulder", "Chest", "Length"],
+  measurements: {
+    "S": ["16", "19", "26.5"],
+    "M": ["17", "20", "27.5"],
+    "L": ["18", "21", "28.5"],
+    "XL": ["19", "22", "29.5"],
+    "2XL": ["20", "23", "30.5"],
+    "3XL": ["21", "24", "31.5"],
+    "4XL": ["22", "25", "32.5"],
+    "5XL": ["23", "26", "33.5"],
+  },
 };
 
-const peUniformItems = ["T-Shirt", "Pants"];
+const menPolo = {
+  price: 515,
+  image: "polo_men.png",
+  columns: ["Shoulder", "Chest", "Length"],
+  measurements: {
+    "S": ["16", "38", "27"],
+    "M": ["17", "40", "28"],
+    "L": ["18", "42", "29"],
+    "XL": ["19", "44", "30"],
+    "2XL": ["20", "46", "31"],
+    "3XL": ["21", "48", "32"],
+    "4XL": ["22", "50", "33"],
+    "5XL": ["23", "52", "34"],
+  },
+};
+
+const menPants = {
+  price: 530,
+  image: "pants_men.png",
+  columns: ["Waist", "Hips", "Length"],
+  measurements: {
+    "S": ["28", "32", "38"],
+    "M": ["30", "34", "39"],
+    "L": ["32", "36", "40"],
+    "XL": ["34", "38", "41"],
+    "2XL": ["36", "40", "42"],
+    "3XL": ["38", "42", "43"],
+    "4XL": ["40", "44", "44"],
+    "5XL": ["42", "46", "45"],
+  },
+};
+
+const womenBlouse = {
+  price: 525,
+  image: "blouse_women.png",
+  columns: ["Shoulder", "Breast", "Hips", "Length"],
+  measurements: {
+    "S": ["14", "34", "34", "23"],
+    "M": ["15", "36", "36", "24"],
+    "L": ["16", "38", "38", "25"],
+    "XL": ["17", "40", "40", "26"],
+    "2XL": ["18", "42", "42", "27"],
+    "3XL": ["19", "44", "44", "28"],
+    "4XL": ["20", "46", "46", "29"],
+    "5XL": ["21", "48", "48", "30"],
+  },
+};
+
+const womenPants = {
+  price: 510,
+  image: "pants_women.png",
+  columns: ["Waist", "Hips", "Length"],
+  measurements: {
+    "S": ["28", "32", "38"],
+    "M": ["30", "34", "39"],
+    "L": ["32", "36", "40"],
+    "XL": ["34", "38", "41"],
+    "2XL": ["36", "40", "42"],
+    "3XL": ["38", "42", "43"],
+    "4XL": ["40", "44", "44"],
+    "5XL": ["42", "46", "45"],
+  },
+};
+
+const womenSkirt = {
+  price: 425,
+  image: "skirt_women.png",
+  columns: ["Waist", "Length"],
+  measurements: {
+    "S": ["28", "24"],
+    "M": ["30", "25"],
+    "L": ["32", "26"],
+    "XL": ["34", "27"],
+    "2XL": ["36", "28"],
+    "3XL": ["38", "28"],
+    "4XL": ["40", "28"],
+    "5XL": ["42", "28"],
+  },
+};
+
+const peShirt = {
+  price: 355,
+  image: "pe_shirt.png",
+  ...shirtChart,
+};
+
+const pePants = {
+  price: 450,
+  image: "pe_pants.png",
+  columns: ["Waist", "Length"],
+  measurements: {
+    "S": ["27-28", "38"],
+    "M": ["29-30", "39"],
+    "L": ["31-32", "40"],
+    "XL": ["33-34", "41"],
+    "2XL": ["35-36", "42"],
+    "3XL": ["37-38", "43"],
+    "4XL": ["39-40", "44"],
+    "5XL": ["41-42", "45"],
+  },
+};
+
+const nstpShirt = {
+  price: 355,
+  image: "nstp_shirt.png",
+  ...shirtChart,
+};
+
+const schoolUniformItems = {
+  Male: { Polo: menPolo, Pants: menPants },
+  Female: { Blouse: womenBlouse, Pants: womenPants, Skirt: womenSkirt },
+};
+
+const peUniformItems = { "T-Shirt": peShirt, Pants: pePants };
 
 const timeSlots = [];
 
@@ -91,31 +222,65 @@ function formatDate(date) {
   )}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function ClothingCard({ title, selectedSize, onSelectSize }) {
+function ClothingCard({ title, product, selectedSize, onSelectSize, optional }) {
   return (
     <div
       className={`bau-clothing-card ${
         selectedSize ? "bau-clothing-card-selected" : ""
       }`}
     >
-      <h3>{title}</h3>
-      <p>Select size</p>
-
-      <div className="bau-size-options">
-        {sizes.map((size) => (
-          <button
-            key={size}
-            type="button"
-            className={`bau-size-button ${
-              selectedSize === size ? "active" : ""
-            }`}
-            aria-pressed={selectedSize === size}
-            onClick={() => onSelectSize(size)}
-          >
-            {size}
-          </button>
-        ))}
+      <div className="bau-clothing-image">
+        <img
+          src={`${import.meta.env.BASE_URL}uniforms/${product.image}`}
+          alt={title}
+        />
       </div>
+
+      <div className="bau-clothing-title">
+        <h3>{title}</h3>
+        <strong>₱{product.price.toFixed(2)}</strong>
+      </div>
+
+      <label className="bau-size-field">
+        <span>{optional ? "Size (optional)" : "Size *"}</span>
+        <select
+          value={selectedSize}
+          onChange={(event) => onSelectSize(event.target.value)}
+        >
+          <option value="">
+            {optional ? "None / select a size" : "Select a size"}
+          </option>
+          {sizes.map((size) => (
+            <option key={size} value={size}>
+              {size}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      <table className="bau-size-table">
+        <caption>Size measurements</caption>
+        <thead>
+          <tr>
+            <th scope="col">Size</th>
+            {product.columns.map((column) => (
+              <th scope="col" key={column}>
+                {column}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {sizes.map((size) => (
+            <tr key={size} className={selectedSize === size ? "selected" : ""}>
+              <th scope="row">{size}</th>
+              {product.measurements[size].map((value, index) => (
+                <td key={product.columns[index]}>{value}</td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -270,6 +435,7 @@ export default function Bau() {
   const [gender, setGender] = useState("");
   const [schoolSelections, setSchoolSelections] = useState({});
   const [peSelections, setPeSelections] = useState({});
+  const [nstpSize, setNstpSize] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");
   const [message, setMessage] = useState("");
@@ -291,6 +457,7 @@ export default function Bau() {
     setGender("");
     setSchoolSelections({});
     setPeSelections({});
+    setNstpSize("");
     setMessage("");
     resetSchedule();
     setShowTicket(false);
@@ -302,6 +469,7 @@ export default function Bau() {
     setGender("");
     setSchoolSelections({});
     setPeSelections({});
+    setNstpSize("");
     setMessage("");
     resetSchedule();
     setShowTicket(false);
@@ -311,6 +479,7 @@ export default function Bau() {
     setGender(option);
     setSchoolSelections({});
     setPeSelections({});
+    setNstpSize("");
     setMessage("");
     resetSchedule();
   }
@@ -321,7 +490,7 @@ export default function Bau() {
 
     updateSelections((previous) => ({
       ...previous,
-      [item]: previous[item] === size ? "" : size,
+      [item]: size,
     }));
 
     setMessage("");
@@ -339,11 +508,11 @@ export default function Bau() {
         return;
       }
 
-      const missingSchoolItems = schoolUniformItems[gender].filter(
+      const missingSchoolItems = Object.keys(schoolUniformItems[gender]).filter(
         (item) => !schoolSelections[item]
       );
 
-      const missingPeItems = peUniformItems.filter(
+      const missingPeItems = Object.keys(peUniformItems).filter(
         (item) => !peSelections[item]
       );
 
@@ -403,6 +572,8 @@ setShowTicket(true);
       {Object.entries(peSelections).map(([item, size]) => (
         <p key={item}>{item}: {size}</p>
       ))}
+
+      {nstpSize && <p><strong>NSTP Shirt:</strong> {nstpSize}</p>}
     </>
   )}
 
@@ -490,22 +661,27 @@ setShowTicket(true);
                 {
                   name: "Books",
                   description: "Browse available books and their prices.",
-                  icon: "📚",
+                  icon: <BookOpen size={20} strokeWidth={1.8} />,
                 },
                 {
                   name: "Uniform",
                   description: "Choose your school and PE uniform sizes.",
-                  icon: "👕",
+                  icon: <Shirt size={20} strokeWidth={1.8} />,
                 },
                 {
                   name: "Graduation Picture",
                   description: "View graduation pictorial information.",
-                  icon: "📸",
+                  icon: <Camera size={20} strokeWidth={1.8} />,
                 },
                 {
                   name: "Sablay",
                   description: "View Sablay information.",
-                  icon: "🎓",
+                  icon: <GraduationCap size={20} strokeWidth={1.8} />,
+                },
+                {
+                  name: "Concessionaires",
+                  description: "View concessionaire information.",
+                  icon: <Store size={20} strokeWidth={1.8} />,
                 },
               ].map((item) => (
                 <button
@@ -524,7 +700,7 @@ setShowTicket(true);
                   </span>
 
                   <span className="bau-category-arrow" aria-hidden="true">
-                    →
+                    ›
                   </span>
                 </button>
               ))}
@@ -593,8 +769,8 @@ setShowTicket(true);
               <div className="bau-panel-heading">
                 <h2>1 · Your details</h2>
                 <p>
-                  Choose your gender and select the sizes for your school and
-                  PE uniforms.
+                  Choose your gender and select your uniform sizes. The NSTP
+                  shirt is optional.
                 </p>
               </div>
 
@@ -632,10 +808,11 @@ setShowTicket(true);
                     </div>
 
                     <div className="bau-clothing-grid">
-                      {schoolUniformItems[gender].map((item) => (
+                      {Object.entries(schoolUniformItems[gender]).map(([item, product]) => (
                         <ClothingCard
                           key={item}
                           title={item}
+                          product={product}
                           selectedSize={schoolSelections[item] || ""}
                           onSelectSize={(size) =>
                             handleClothingSize("school", item, size)
@@ -652,16 +829,37 @@ setShowTicket(true);
                     </div>
 
                     <div className="bau-clothing-grid">
-                      {peUniformItems.map((item) => (
+                      {Object.entries(peUniformItems).map(([item, product]) => (
                         <ClothingCard
                           key={item}
                           title={item}
+                          product={product}
                           selectedSize={peSelections[item] || ""}
                           onSelectSize={(size) =>
                             handleClothingSize("pe", item, size)
                           }
                         />
                       ))}
+                    </div>
+                  </div>
+
+                  <div className="bau-uniform-panel">
+                    <div className="bau-uniform-panel-heading">
+                      <h3>NSTP Shirt</h3>
+                      <p>Optional. Choose a size if you need an NSTP shirt.</p>
+                    </div>
+
+                    <div className="bau-clothing-grid">
+                      <ClothingCard
+                        title="NSTP Shirt"
+                        product={nstpShirt}
+                        selectedSize={nstpSize}
+                        optional
+                        onSelectSize={(size) => {
+                          setNstpSize(size);
+                          setMessage("");
+                        }}
+                      />
                     </div>
                   </div>
                 </div>
@@ -682,7 +880,7 @@ setShowTicket(true);
         {category === "Graduation Picture" && (
           <section className="bau-panel bau-info-panel">
             <div className="bau-large-icon" aria-hidden="true">
-              📸
+              G1
             </div>
             <h2>Graduation Picture</h2>
             <p>
@@ -695,10 +893,20 @@ setShowTicket(true);
         {category === "Sablay" && (
           <section className="bau-panel bau-info-panel">
             <div className="bau-large-icon" aria-hidden="true">
-              🎓
+              S1
             </div>
             <h2>Sablay</h2>
             <p>View information about Sablay offered through BAU.</p>
+          </section>
+        )}
+
+        {category === "Concessionaires" && (
+          <section className="bau-panel bau-info-panel">
+            <div className="bau-large-icon" aria-hidden="true">
+              <Store size={32} strokeWidth={1.8} />
+            </div>
+            <h2>Concessionaires</h2>
+            <p>View information about concessionaires offered through BAU.</p>
           </section>
         )}
 

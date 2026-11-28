@@ -21,8 +21,11 @@ export default function ServicePicker({
             onClick={() => onChange(item)}
             aria-pressed={value === item}
           >
-            {item}
-          </button>
+  <span className="srau-service-label">{item}</span>
+  <span className="srau-service-arrow" aria-hidden="true">
+    ›
+  </span>
+</button>
         ))}
       </div>
 
